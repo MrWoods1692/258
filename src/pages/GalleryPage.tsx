@@ -28,7 +28,7 @@ const stats: GalleryStats = {
 const storageLinks: StorageLink[] = [
   {
     name: "Alist 路线",
-    url: "https://alist.example.com/258class",
+    url: "https://alist.mrcwoods.com/",
     icon: <HardDrive className="w-5 h-5" />,
     description: "Alist 是一个支持多种存储协议的文件列表程序。此路线提供稳定高速的在线浏览体验，支持直接预览照片和视频，无需下载即可查看班级相册内容。",
   },
