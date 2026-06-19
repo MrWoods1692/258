@@ -1,7 +1,7 @@
 import React from "react";
 import { Navbar } from "@/components/class/Navbar";
 import { ClassFooter } from "@/components/class/ClassFooter";
-import { Heart, User, Code, DollarSign } from "lucide-react";
+import { Heart, User, Code, DollarSign, GitBranch, ExternalLink } from "lucide-react";
 
 const AboutWebsitePage = () => {
   const techStack = [
@@ -88,6 +88,26 @@ const AboutWebsitePage = () => {
           <p className="mt-6 text-sm text-muted-foreground font-yang-regular">
             采用现代化前端技术栈，纯静态部署，无需后端服务器，所有数据存储于浏览器本地。
           </p>
+        </section>
+
+        {/* 开源仓库 */}
+        <section className="bg-card handwritten-border shadow-sm p-8 mb-8">
+          <div className="flex items-center gap-3 mb-6">
+            <GitBranch className="w-6 h-6 text-primary" />
+            <h2 className="text-2xl font-yang-semibold">开源仓库</h2>
+          </div>
+          <p className="text-muted-foreground font-yang-regular leading-relaxed mb-4">
+            本网站完全开源，欢迎查看源代码、提出建议或贡献代码。
+          </p>
+          <a
+            href="https://github.com/MrWoods1692/258"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-muted/30 border border-border rounded-lg hover:bg-muted/50 transition-all font-yang-semibold text-foreground"
+          >
+            <ExternalLink className="w-4 h-4" />
+            MrWoods1692/258
+          </a>
         </section>
 
         {/* 投入资金 */}
