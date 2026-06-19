@@ -9,15 +9,15 @@ const AboutPage = () => {
   const { ref: honorsRef, isVisible: honorsVisible } = useScrollAnimation({ threshold: 0.1 });
   const { ref: facilitiesRef, isVisible: facilitiesVisible } = useScrollAnimation({ threshold: 0.1 });
   const milestones = [
-    { year: "1970", event: "学校正式成立，开启教育征程" },
-    { year: "1985", event: "被评为省级重点学校" },
-    { year: "2000", event: "完成现代化校园改造" },
-    { year: "2010", event: "获得国家级示范学校称号" },
-    { year: "2020", event: "建成智慧校园系统" }
+    { year: "2023.09", event: "258班（星火班）正式组建，开启初中旅程" },
+    { year: "2024.06", event: "荣获校级优秀班集体称号" },
+    { year: "2024.09", event: "升入九年级，迎接中考挑战" },
+    { year: "2025.06", event: "顺利完成中考，奔赴美好未来" },
+    { year: "2026", event: "聚是一团火，散是满天星" }
   ];
 
   const honors = [
-    "全国教育系统先进集体",
+    "星火班 · 优秀班集体",
     "省级文明校园",
     "市级教学质量优秀学校",
     "科技创新教育示范学校",
@@ -57,10 +57,10 @@ const AboutPage = () => {
       <div className="max-w-7xl mx-auto px-4 xl:px-8">
         <div className="text-center mb-12 animate-fade-in-down">
           <h1 className="text-4xl xl:text-5xl font-bold mb-4 gradient-text">
-            学校概况
+            班级概况
           </h1>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            深入了解XX学校的发展历程、办学理念和辉煌成就
+            深入了解258班（星火班）的班级故事与精彩瞬间
           </p>
         </div>
 
@@ -74,11 +74,11 @@ const AboutPage = () => {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground leading-relaxed mb-8">
-                XX学校创建于1970年，是一所具有深厚历史底蕴的知名学府。
-                建校五十多年来，学校始终坚持"立德树人"的根本任务，
-                秉承"追求卓越、成就未来"的办学理念，为社会培养了大批优秀人才。
-                学校经历了从传统教育到现代化教育的转型，不断创新教育模式，
-                提升教学质量，成为区域内具有重要影响力的教育机构。
+                258班，又称星火班，是桂林市奎光学校的一个优秀班集体。
+                三年来，同学们在教室里奋笔疾书，在操场上挥洒汗水，
+                在舞台上绽放光彩。每一次早读的朗朗书声，每一次课间的欢声笑语，
+                每一次考试后的相互鼓励，都化作了青春里最珍贵的回忆。
+                聚是一团火，散是满天星。
               </p>
               <div className="space-y-4">
                 {milestones.map((milestone, index) => (

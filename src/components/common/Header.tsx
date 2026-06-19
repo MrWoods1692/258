@@ -14,12 +14,16 @@ const Header = () => {
       <nav className="max-w-7xl mx-auto px-4 xl:px-8">
         <div className="flex justify-between items-center h-20">
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center transition-transform group-hover:scale-105">
-              <GraduationCap className="w-7 h-7 text-primary-foreground" />
+            <div className="w-12 h-12 rounded-full bg-white border-2 border-border overflow-hidden transition-transform group-hover:scale-105">
+              <img
+                src="https://cloudflarecnimg.scdn.io/i/6a34e71ead2d2_1781851934.jpg"
+                alt="班徽"
+                className="w-full h-full object-contain"
+              />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-bold text-foreground">XX学校</span>
-              <span className="text-xs text-muted-foreground">追求卓越 成就未来</span>
+              <span className="text-xl font-bold text-foreground">258班</span>
+              <span className="text-xs text-muted-foreground">星火三班 · 奋勇争先</span>
             </div>
           </Link>
 

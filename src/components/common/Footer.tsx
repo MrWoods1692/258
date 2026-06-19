@@ -9,13 +9,17 @@ const Footer = () => {
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
-                <GraduationCap className="w-6 h-6 text-accent-foreground" />
+              <div className="w-10 h-10 rounded-full bg-white border-2 border-primary-foreground/30 overflow-hidden">
+                <img
+                  src="https://cloudflarecnimg.scdn.io/i/6a34e71ead2d2_1781851934.jpg"
+                  alt="班徽"
+                  className="w-full h-full object-contain"
+                />
               </div>
-              <span className="text-xl font-bold">XX学校</span>
+              <span className="text-xl font-bold">258班</span>
             </div>
             <p className="text-primary-foreground/80 leading-relaxed">
-              秉承"追求卓越、成就未来"的办学理念，致力于培养德智体美劳全面发展的优秀人才，为社会发展贡献力量。
+              聚是一团火，散是满天星。258班（星火班）—— 我们共同的青春记忆。
             </p>
           </div>
 
@@ -27,31 +31,27 @@ const Footer = () => {
             <div className="space-y-3 text-primary-foreground/80">
               <p className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 mt-1 flex-shrink-0" />
-                <span>XX省XX市XX区XX路XX号</span>
+                <span>桂林市奎光学校 258班（星火班）</span>
               </p>
               <p className="flex items-center gap-2">
-                <Phone className="w-4 h-4 flex-shrink-0" />
-                <span>0123-12345678</span>
-              </p>
-              <p className="flex items-center gap-2">
-                <Mail className="w-4 h-4 flex-shrink-0" />
-                <span>xxxxx@163.com</span>
+                <GraduationCap className="w-4 h-4 flex-shrink-0" />
+                <span>星火三班 · 奋勇争先</span>
               </p>
             </div>
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold mb-4">办公时间</h3>
+            <h3 className="text-lg font-semibold mb-4">班级格言</h3>
             <div className="space-y-2 text-primary-foreground/80">
-              <p>周一至周五：8:00 - 17:30</p>
-              <p>周六至周日：9:00 - 16:00</p>
-              <p className="text-sm mt-4">节假日办公时间请关注学校公告</p>
+              <p>星火三班，奋勇争先</p>
+              <p>挑战极限，勇夺桂冠</p>
+              <p className="text-sm mt-4">聚是一团火，散是满天星</p>
             </div>
           </div>
         </div>
 
         <div className="mt-8 pt-8 border-t border-primary-foreground/20 text-center text-primary-foreground/70">
-          <p>{currentYear} XX学校</p>
+          <p>{currentYear} 258班 · 星火班</p>
         </div>
       </div>
     </footer>
