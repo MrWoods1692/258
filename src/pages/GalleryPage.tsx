@@ -20,9 +20,9 @@ interface StorageLink {
 }
 
 const stats: GalleryStats = {
-  photoCount: 114514,
-  videoCount: 114514,
-  totalSizeGB: 116.00466,
+  photoCount: 2480,
+  videoCount: 1986,
+  totalSizeGB: 116.1,
 };
 
 const storageLinks: StorageLink[] = [
