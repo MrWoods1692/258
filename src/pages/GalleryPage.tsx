@@ -184,7 +184,7 @@ const GalleryPage = () => {
 
           <div className="mt-8 p-4 bg-muted/20 rounded-lg border border-dashed border-border">
             <p className="text-sm text-muted-foreground font-yang-regular text-center">
-              💡 提示：建议使用 Alist 路线或 NAS 路线获得最佳浏览体验
+              💡 提示：建议使用 Alist 路线获得最佳浏览体验
             </p>
           </div>
         </div>
