@@ -111,7 +111,7 @@ const teachers: Teacher[] = [
     wechat: "未知",
   },
    {
-    id: 2,
+    id: 3,
     name: "雄运伟",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Liu",
     gender: "男",
@@ -121,7 +121,7 @@ const teachers: Teacher[] = [
     wechat: "未知",
   },
   {
-    id: 2,
+    id: 4,
     name: "班航",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Liu",
     gender: "男",
@@ -131,7 +131,7 @@ const teachers: Teacher[] = [
     wechat: "未知",
   },
   {
-    id: 3,
+    id: 5,
     name: "覃江丹",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Yang",
     gender: "女",
@@ -141,7 +141,7 @@ const teachers: Teacher[] = [
     wechat: "未知",
   },
   {
-    id: 3,
+    id: 6,
     name: "牛耕",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Wang",
     gender: "男",
@@ -151,7 +151,7 @@ const teachers: Teacher[] = [
     wechat: "未知",
   },
   {
-    id: 4,
+    id: 7,
     name: "黄老师",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Huang",
     gender: "男",
@@ -161,7 +161,7 @@ const teachers: Teacher[] = [
     wechat: "未知",
   },
   {
-    id: 5,
+    id: 8,
     name: "吴老师",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Wu",
     gender: "女",
@@ -171,7 +171,7 @@ const teachers: Teacher[] = [
     wechat: "未知",
   },
   {
-    id: 6,
+    id: 9,
     name: "郑老师",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Zheng",
     gender: "男",
