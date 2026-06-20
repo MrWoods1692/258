@@ -20,9 +20,9 @@ interface StorageLink {
 }
 
 const stats: GalleryStats = {
-  photoCount: 1248,
-  videoCount: 86,
-  totalSizeGB: 12.5,
+  photoCount: 114514,
+  videoCount: 114514,
+  totalSizeGB: 116.00466,
 };
 
 const storageLinks: StorageLink[] = [
@@ -30,25 +30,25 @@ const storageLinks: StorageLink[] = [
     name: "Alist 路线",
     url: "https://alist.mrcwoods.com/",
     icon: <HardDrive className="w-5 h-5" />,
-    description: "Alist 是一个支持多种存储协议的文件列表程序。此路线提供稳定高速的在线浏览体验，支持直接预览照片和视频，无需下载即可查看班级相册内容。",
+    description: "网站管理员掏钱买了台香港2C2G的机子，安装了一个Alist作为在线浏览平台，里面集合了各个平台存储的媒体文件。但是带宽10兆，多人加载会比较慢。",
   },
   {
     name: "夸克网盘路线",
-    url: "https://pan.quark.cn/s/example258",
+    url: "https://pan.quark.cn/s/bf3174b4fa3b",
     icon: <ExternalLink className="w-5 h-5" />,
-    description: "夸克网盘是阿里巴巴旗下的云存储服务。此路线适合下载照片原片和视频文件，支持批量下载和在线预览，需要夸克网盘账号。",
+    description: "里面内容全面，需要夸克网盘账号。",
   },
   {
-    name: "阿里云盘路线",
-    url: "https://www.aliyundrive.com/s/example258",
+    name: "一刻相册路线",
+    url: "https://photo.baidu.com/photo/wap/albumShare/invite/ZKEDIJzjjt?from=webcreate",
     icon: <ExternalLink className="w-5 h-5" />,
-    description: "阿里云盘提供高速下载和在线预览服务。此路线适合下载高清原图，支持文件夹批量下载，需要阿里云盘账号。",
+    description: "里面只有部分内容，需要一刻相册（百度）账号。",
   },
   {
-    name: "NAS 路线",
-    url: "https://nas.example.com/258class",
+    name: "蓝奏云优享版路线",
+    url: "https://www.ilanzou.com/s/QIMXcbuh",
     icon: <HardDrive className="w-5 h-5" />,
-    description: "NAS（网络附加存储）路线提供校内高速访问，适合在校内网络环境下直接浏览和下载。上传更新最快，但校外访问可能需要 VPN。",
+    description: "里面只有部分内容，需要蓝奏云优享版账号。",
   },
 ];
 
