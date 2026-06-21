@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Image, Users, MessageCircle, Copy, Check } from "lucide-react";
+import { Image, Users, MessageCircle, Copy, Check, StickyNote } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -75,6 +75,7 @@ const QQGroupCard = ({ group }: { group: typeof qqGroups[0] }) => {
 const links = [
   { icon: Users, name: "班级成员", href: "/members", type: "link" },
   { icon: Image, name: "时光相册", href: "/gallery", type: "link" },
+  { icon: StickyNote, name: "留言板", href: import.meta.env.VITE_MESSAGE_BOARD_URL || "http://localhost:6666", type: "external" },
   { icon: MessageCircle, name: "QQ群", type: "dialog" },
 ];
 
@@ -113,6 +114,23 @@ export const NavigationLinks = () => {
                   </div>
                 </DialogContent>
               </Dialog>
+            );
+          }
+
+          if (link.type === "external") {
+            return (
+              <a
+                key={link.name}
+                href={link.href || "#"}
+                className="group block"
+              >
+                <Card className="handwritten-border shadow-sm hover:shadow-elegant transition-all duration-300 p-6 flex flex-col items-center gap-4 bg-background">
+                  <div className="w-16 h-16 rounded-full flex items-center justify-center bg-muted/20 group-hover:scale-110 group-hover:bg-foreground group-hover:text-background transition-all">
+                    <link.icon className="w-8 h-8" />
+                  </div>
+                  <span className="font-yang-semibold text-lg">{link.name}</span>
+                </Card>
+              </a>
             );
           }
 

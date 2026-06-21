@@ -23,6 +23,7 @@ export const Navbar = () => {
     { name: "首页", href: "/" },
     { name: "时光相册", href: "/gallery" },
     { name: "班级成员", href: "/members" },
+    { name: "留言板", href: import.meta.env.VITE_MESSAGE_BOARD_URL || "http://localhost:6666", external: true },
     { name: "关于网站", href: "/about-website" },
   ];
 
@@ -74,7 +75,16 @@ export const Navbar = () => {
                 <SheetTitle className="font-yang-semibold text-xl border-b pb-2">菜单导航</SheetTitle>
               </SheetHeader>
               <nav className="mt-8 flex flex-col gap-4">
-                {navItems.map((item) => (
+                {navItems.map((item) => item.external ? (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    onClick={handleLinkClick}
+                    className="text-lg font-yang-regular py-2 border-b border-border/50 hover:pl-2 transition-all"
+                  >
+                    {item.name}
+                  </a>
+                ) : (
                   <Link
                     key={item.name}
                     to={item.href}
