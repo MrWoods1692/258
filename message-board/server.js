@@ -160,7 +160,7 @@ const requireAdmin = (c) => {
 };
 
 app.use("*", async (c, next) => {
-  c.header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://q1.qlogo.cn; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
+  c.header("Content-Security-Policy", "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; img-src 'self' data: https://q1.qlogo.cn; connect-src 'self' https://static.cloudflareinsights.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
   c.header("X-Content-Type-Options", "nosniff");
   c.header("X-Frame-Options", "DENY");
   c.header("Referrer-Policy", "same-origin");
