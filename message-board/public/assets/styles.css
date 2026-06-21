@@ -904,6 +904,64 @@ input:focus-visible {
   font-size: 13px;
 }
 
+.icon-button.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.moderation-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(47, 42, 36, 0.28);
+}
+
+.moderation-btn {
+  flex: 1;
+  min-height: 30px;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.moderation-btn.approve {
+  background: rgba(59, 125, 82, 0.85);
+  color: #fff;
+}
+
+.moderation-btn.reject {
+  background: rgba(218, 111, 77, 0.85);
+  color: #fff;
+}
+
+.moderation-btn.delete {
+  background: rgba(173, 59, 45, 0.85);
+  color: #fff;
+}
+
+.moderation-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(66, 50, 27, 0.18);
+}
+
+.moderation-btn.small {
+  min-height: 24px;
+  padding: 0 8px;
+  font-size: 11px;
+}
+
+.comment-moderation {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+
 .comments {
   margin-top: 14px;
   border-top: 1px dashed rgba(47, 42, 36, 0.28);

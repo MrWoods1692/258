@@ -194,6 +194,8 @@ app.get("/auth/login", (c) => {
   return c.redirect(`${process.env.OAUTH_AUTHORIZATION_URL}?${params.toString()}`);
 });
 
+
+
 app.get("/auth/callback", async (c) => {
   const code = c.req.query("code");
   const state = c.req.query("state");
@@ -396,6 +398,11 @@ app.post("/api/admin/moderation/:type/:id", async (c) => {
   const item = store[collectionName].find((entry) => entry.id === id);
   if (!item) return c.json({ error: "审核目标不存在" }, 404);
 
+  const currentStatus = item.status || "approved";
+  if (action !== "delete" && currentStatus !== "pending") {
+    return c.json({ error: `当前状态为"${currentStatus}"，无法执行此操作` }, 400);
+  }
+
   if (action === "delete") {
     if (type === "message") {
       const commentIds = store.comments.filter((comment) => comment.message_id === id).map((comment) => comment.id);
@@ -418,13 +425,15 @@ app.post("/api/admin/moderation/:type/:id", async (c) => {
 });
 
 app.get("/api/messages", (c) => {
-  const user = requireUser(c);
-  if (user instanceof Response) return user;
+  const user = getCurrentUser(c);
 
   const store = readStore();
   const messages = [...store.messages]
     .map((message) => ({ ...message, status: message.status || "approved" }))
-    .filter((message) => canSeeItem(message, user))
+    .filter((message) => {
+      if (!user) return message.status === "approved";
+      return canSeeItem(message, user);
+    })
     .sort((left, right) => right.created_at.localeCompare(left.created_at));
 
   return c.json({
@@ -432,7 +441,10 @@ app.get("/api/messages", (c) => {
       const author = store.users.find((item) => item.id === message.user_id);
       const comments = store.comments
         .map((comment) => ({ ...comment, status: comment.status || "approved" }))
-        .filter((comment) => comment.message_id === message.id && canSeeItem(comment, user))
+        .filter((comment) => {
+          if (!user) return comment.status === "approved";
+          return comment.message_id === message.id && canSeeItem(comment, user);
+        })
         .sort((left, right) => left.created_at.localeCompare(right.created_at))
         .map((comment) => {
           const commentAuthor = store.users.find((item) => item.id === comment.user_id);
@@ -441,27 +453,27 @@ app.get("/api/messages", (c) => {
             content: comment.content,
             author: commentAuthor?.display_name || "同学",
             avatarUrl: avatarUrl(commentAuthor?.qq),
-            isMine: comment.user_id === user.id,
+            isMine: user ? comment.user_id === user.id : false,
             createdAt: comment.created_at,
             status: comment.status,
             statusText: pendingNotice(comment.status),
             likeCount: likeCount(store, "comment", comment.id),
-            likedByMe: likedBy(store, user.id, "comment", comment.id),
+            likedByMe: user ? likedBy(store, user.id, "comment", comment.id) : false,
           };
         });
 
       return {
         id: message.id,
         content: message.content,
-        author: displayAuthor(message, author, user.id),
-        avatarUrl: displayAvatar(message, author, user.id),
-        isMine: message.user_id === user.id,
+        author: displayAuthor(message, author, user?.id),
+        avatarUrl: displayAvatar(message, author, user?.id),
+        isMine: user ? message.user_id === user.id : false,
         isAnonymous: Boolean(message.is_anonymous),
         createdAt: message.created_at,
         status: message.status,
         statusText: pendingNotice(message.status),
         likeCount: likeCount(store, "message", message.id),
-        likedByMe: likedBy(store, user.id, "message", message.id),
+        likedByMe: user ? likedBy(store, user.id, "message", message.id) : false,
         commentCount: comments.length,
         comments,
       };

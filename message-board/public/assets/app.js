@@ -38,12 +38,24 @@ const request = async (url, options = {}) => {
   return data;
 };
 
-const formatTime = (value) => new Intl.DateTimeFormat("zh-CN", {
-  month: "2-digit",
-  day: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-}).format(new Date(`${value.replace(" ", "T")}+08:00`));
+const formatTime = (value) => {
+  if (!value) return "";
+  let date;
+  if (value.includes("Z")) {
+    date = new Date(value);
+  } else if (value.includes("T")) {
+    date = new Date(`${value}+08:00`);
+  } else {
+    date = new Date(`${value.replace(" ", "T")}+08:00`);
+  }
+  if (isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+};
 
 const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (char) => ({
   "&": "&amp;",
@@ -76,11 +88,11 @@ const updateStats = () => {
 const renderAuth = () => {
   userbar.innerHTML = state.user
     ? `<span class="user-pill"><strong>${escapeHtml(state.user.display_name)}</strong><small>QQ ${escapeHtml(state.user.qq)}</small></span><button class="ghost-button" id="logoutButton">退出</button>`
-    : `<a class="primary-button small" href="/auth/login">登录</a>`;
+    : `<a href="/auth/login" class="primary-button small">登录</a>`;
 
   loginPanel.classList.toggle("hidden", Boolean(state.user));
   composer.classList.toggle("hidden", !state.user);
-  board.classList.toggle("hidden", !state.user);
+  board.classList.toggle("hidden", false);
   statsStrip.classList.toggle("hidden", !state.user);
   profilePanel.classList.toggle("hidden", !state.user);
   adminPanel.classList.toggle("hidden", !state.user?.isAdmin);
@@ -97,6 +109,8 @@ const renderAuth = () => {
     renderProfile();
     renderAdmin();
   });
+
+
 };
 
 const renderStatusBadge = (statusText) => statusText ? `<em class="status-badge">${escapeHtml(statusText)}</em>` : "";
@@ -207,11 +221,11 @@ const renderAdmin = () => {
   ` : "";
 
   const pendingItems = state.moderationItems.filter((item) => item.status === "pending");
-  const visibleItems = pendingItems.length ? pendingItems : state.moderationItems.slice(0, 12);
-  if (!visibleItems.length) {
+  if (!pendingItems.length) {
     adminList.innerHTML = `<div class="admin-empty">暂无需要审核的内容。</div>`;
     return;
   }
+  const visibleItems = pendingItems;
 
   adminList.innerHTML = visibleItems.map((item) => `
     <article class="admin-item">
@@ -243,16 +257,10 @@ const renderAdmin = () => {
 };
 
 const renderMessages = () => {
-  if (!state.user) {
-    board.innerHTML = "";
-    updateStats();
-    return;
-  }
-
   updateStats();
 
   if (!state.messages.length) {
-    board.innerHTML = `<div class="empty-state"><strong>墙上还空着</strong><span>写下第一张便签，让这里开始热闹起来。</span></div>`;
+    board.innerHTML = `<div class="empty-state"><strong>墙上还空着</strong><span>${state.user ? "写下第一张便签，让这里开始热闹起来。" : "登录后可以发布留言。"}</span></div>`;
     return;
   }
 
@@ -270,8 +278,15 @@ const renderMessages = () => {
         ${message.isAnonymous && message.isMine ? "<em>已匿名</em>" : ""}
         ${renderStatusBadge(message.statusText)}
       </footer>
+      ${state.user?.isAdmin && message.status === "pending" ? `
+        <div class="moderation-actions">
+          <button class="moderation-btn approve" data-moderate-action="approve" data-moderate-type="message" data-moderate-id="${message.id}">通过</button>
+          <button class="moderation-btn reject" data-moderate-action="reject" data-moderate-type="message" data-moderate-id="${message.id}">拒绝</button>
+          <button class="moderation-btn delete" data-moderate-action="delete" data-moderate-type="message" data-moderate-id="${message.id}">删除</button>
+        </div>
+      ` : ""}
       <div class="note-actions">
-        <button class="icon-button ${message.likedByMe ? "active" : ""}" data-like-type="message" data-like-id="${message.id}" aria-label="点赞留言">♥ <span>${message.likeCount}</span></button>
+        ${state.user ? `<button class="icon-button ${message.likedByMe ? "active" : ""}" data-like-type="message" data-like-id="${message.id}" aria-label="点赞留言">♥ <span>${message.likeCount}</span></button>` : `<span class="icon-button disabled">♥ <span>${message.likeCount}</span></span>`}
         <button class="icon-button" data-toggle-comments="${message.id}" aria-expanded="${state.expandedComments.has(message.id)}">评论 <span>${message.commentCount}</span></button>
       </div>
       <section class="comments ${state.expandedComments.has(message.id) ? "" : "hidden"}" id="comments-${message.id}">
@@ -284,19 +299,24 @@ const renderMessages = () => {
               </div>
               <p>${escapeHtml(comment.content)}</p>
               ${renderStatusBadge(comment.statusText)}
-              <button class="icon-button compact ${comment.likedByMe ? "active" : ""}" data-like-type="comment" data-like-id="${comment.id}" aria-label="点赞评论">♥ ${comment.likeCount}</button>
+              ${state.user?.isAdmin && comment.status === "pending" ? `
+                <div class="comment-moderation">
+                  <button class="moderation-btn approve small" data-moderate-action="approve" data-moderate-type="comment" data-moderate-id="${comment.id}">通过</button>
+                  <button class="moderation-btn reject small" data-moderate-action="reject" data-moderate-type="comment" data-moderate-id="${comment.id}">拒绝</button>
+                  <button class="moderation-btn delete small" data-moderate-action="delete" data-moderate-type="comment" data-moderate-id="${comment.id}">删除</button>
+                </div>
+              ` : ""}
+              ${state.user ? `<button class="icon-button compact ${comment.likedByMe ? "active" : ""}" data-like-type="comment" data-like-id="${comment.id}" aria-label="点赞评论">♥ ${comment.likeCount}</button>` : `<span class="icon-button compact disabled">♥ ${comment.likeCount}</span>`}
             </div>
           `).join("") : `<p class="comment-empty">还没有评论。</p>`}
         </div>
-        <form class="comment-form" data-message-id="${message.id}">
+        ${state.user ? `<form class="comment-form" data-message-id="${message.id}">
           <input maxlength="280" placeholder="写一条评论" />
           <button type="submit">发送</button>
-        </form>
+        </form>` : ""}
       </section>
     </article>
   `).join("");
-
-  bindBoardEvents();
 };
 
 const loadAdmin = async () => {
@@ -322,28 +342,45 @@ const refreshUserData = async () => {
 };
 
 const bindBoardEvents = () => {
-  document.querySelectorAll("[data-toggle-comments]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const messageId = Number(button.dataset.toggleComments);
+  board.addEventListener("click", async (event) => {
+    const toggleButton = event.target.closest("[data-toggle-comments]");
+    if (toggleButton) {
+      const messageId = Number(toggleButton.dataset.toggleComments);
       if (state.expandedComments.has(messageId)) {
         state.expandedComments.delete(messageId);
       } else {
         state.expandedComments.add(messageId);
       }
-      button.setAttribute("aria-expanded", String(state.expandedComments.has(messageId)));
+      toggleButton.setAttribute("aria-expanded", String(state.expandedComments.has(messageId)));
       document.querySelector(`#comments-${messageId}`)?.classList.toggle("hidden", !state.expandedComments.has(messageId));
-    });
-  });
+      return;
+    }
 
-  document.querySelectorAll("[data-like-type]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      await request(`/api/likes/${button.dataset.likeType}/${button.dataset.likeId}`, { method: "POST" });
+    const likeButton = event.target.closest("[data-like-type]");
+    if (likeButton && state.user) {
+      await request(`/api/likes/${likeButton.dataset.likeType}/${likeButton.dataset.likeId}`, { method: "POST" });
       await refreshUserData();
-    });
+      return;
+    }
+
+    const moderateButton = event.target.closest("[data-moderate-action]");
+    if (moderateButton) {
+      try {
+        await request(`/api/admin/moderation/${moderateButton.dataset.moderateType}/${moderateButton.dataset.moderateId}`, {
+          method: "POST",
+          body: JSON.stringify({ action: moderateButton.dataset.moderateAction }),
+        });
+        await refreshUserData();
+      } catch (error) {
+        console.error("Moderation action failed:", error);
+      }
+      return;
+    }
   });
 
-  document.querySelectorAll(".comment-form").forEach((form) => {
-    form.addEventListener("submit", async (event) => {
+  board.addEventListener("submit", async (event) => {
+    const form = event.target.closest(".comment-form");
+    if (form && state.user) {
       event.preventDefault();
       const input = form.querySelector("input");
       const content = input.value.trim();
@@ -355,15 +392,20 @@ const bindBoardEvents = () => {
       input.value = "";
       state.expandedComments.add(Number(form.dataset.messageId));
       await refreshUserData();
-    });
+    }
   });
 };
 
 const loadMessages = async () => {
   board.setAttribute("aria-busy", "true");
   try {
-    const data = await request("/api/messages");
-    state.messages = data.messages;
+    const response = await fetch("/api/messages", { headers: { "content-type": "application/json" } });
+    const data = await response.json().catch(() => ({ messages: [] }));
+    state.messages = data.messages || [];
+    renderMessages();
+  } catch (error) {
+    console.error("Failed to load messages:", error);
+    state.messages = [];
     renderMessages();
   } finally {
     board.removeAttribute("aria-busy");
@@ -412,15 +454,24 @@ document.querySelectorAll("[data-profile-tab]").forEach((button) => {
 });
 
 const boot = async () => {
-  const data = await request("/api/me");
-  state.user = data.user;
-  renderAuth();
-  if (state.user) {
-    await refreshUserData();
+  try {
+    const response = await fetch("/api/me", { headers: { "content-type": "application/json" } });
+    const data = await response.json().catch(() => ({ user: null }));
+    state.user = data.user;
+  } catch (error) {
+    state.user = null;
   }
+  renderAuth();
+  await loadMessages();
+  if (state.user) {
+    await loadActivity();
+    if (state.user.isAdmin) await loadAdmin();
+  }
+  bindBoardEvents();
 };
 
 boot().catch((error) => {
   console.error(error);
   renderAuth();
+  loadMessages();
 });
