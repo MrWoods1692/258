@@ -23,7 +23,7 @@ export const Navbar = () => {
     { name: "首页", href: "/" },
     { name: "时光相册", href: "/gallery" },
     { name: "班级成员", href: "/members" },
-    { name: "留言板", href: import.meta.env.VITE_MESSAGE_BOARD_URL || "https://b.258.mrcwoods.com/", external: true },
+    { name: "留言板", href: import.meta.env.VITE_MESSAGE_BOARD_URL || "https://board.mrcwoods.com/", external: true },
     { name: "关于网站", href: "/about-website" },
   ];
 

@@ -21,17 +21,18 @@ const requiredEnv = [
   "SESSION_SECRET",
 ];
 
-for (const key of requiredEnv) {
-  if (!process.env[key]) {
-    console.warn(`[message-board] Missing ${key}; copy .env.example to .env and fill it before login works.`);
-  }
+const missingKeys = requiredEnv.filter((key) => !process.env[key]);
+if (missingKeys.length > 0) {
+  console.error(`[message-board] FATAL: Missing required env vars:\n  ${missingKeys.join("\n  ")}`);
+  console.error(`[message-board] Copy .env.example to .env and fill in the values.`);
+  process.exit(1);
 }
 
 const app = new Hono();
 const port = Number(process.env.PORT || 6666);
 const publicBaseUrl = process.env.PUBLIC_BASE_URL || `http://localhost:${port}`;
-const cookieSecure = process.env.COOKIE_SECURE === "true";
-const sessionSecret = process.env.SESSION_SECRET || "dev-only-session-secret";
+const cookieSecure = process.env.COOKIE_SECURE ? process.env.COOKIE_SECURE === "true" : publicBaseUrl.startsWith("https://");
+const sessionSecret = process.env.SESSION_SECRET;
 const adminQqs = new Set((process.env.ADMIN_QQS || "").split(",").map((qq) => qq.trim()).filter(Boolean));
 const bannedWords = (process.env.BANNED_WORDS || "赌博,诈骗,代考,外挂,色情,辱骂,暴力").split(",").map((word) => word.trim()).filter(Boolean);
 const dataDir = join(process.cwd(), "data");
@@ -181,7 +182,7 @@ app.get("/auth/login", (c) => {
   const params = new URLSearchParams({
     response_type: "code",
     client_id: process.env.OAUTH_CLIENT_ID || "",
-    redirect_uri: process.env.OAUTH_REDIRECT_URI || `${publicBaseUrl}/auth/callback`,
+    redirect_uri: process.env.OAUTH_REDIRECT_URI,
     scope: process.env.OAUTH_SCOPE || "profile",
     state,
     code_challenge: sha256(verifier),
@@ -200,6 +201,8 @@ app.get("/auth/callback", async (c) => {
   const verifier = getSignedCookie(c, "mb_pkce_verifier");
 
   if (!code || !state || !storedState || state !== storedState || !verifier) {
+    deleteCookie(c, "mb_oauth_state", { path: "/" });
+    deleteCookie(c, "mb_pkce_verifier", { path: "/" });
     return c.text("OAuth state validation failed.", 400);
   }
 
@@ -209,7 +212,7 @@ app.get("/auth/callback", async (c) => {
     body: new URLSearchParams({
       grant_type: "authorization_code",
       code,
-      redirect_uri: process.env.OAUTH_REDIRECT_URI || `${publicBaseUrl}/auth/callback`,
+      redirect_uri: process.env.OAUTH_REDIRECT_URI,
       client_id: process.env.OAUTH_CLIENT_ID || "",
       client_secret: process.env.OAUTH_CLIENT_SECRET || "",
       code_verifier: verifier,
@@ -218,15 +221,27 @@ app.get("/auth/callback", async (c) => {
 
   if (!tokenResponse.ok) return c.text("OAuth token exchange failed.", 502);
 
-  const tokenData = await tokenResponse.json();
+  let tokenData;
+  try {
+    tokenData = await tokenResponse.json();
+  } catch {
+    return c.text("OAuth token endpoint returned invalid JSON.", 502);
+  }
+  if (!tokenData.access_token) return c.text("OAuth token response missing access_token.", 502);
   const userInfoResponse = await fetch(process.env.OAUTH_USERINFO_URL, {
     headers: { authorization: `Bearer ${tokenData.access_token}` },
   });
 
   if (!userInfoResponse.ok) return c.text("OAuth userinfo request failed.", 502);
 
-  const profile = await userInfoResponse.json();
+  let profile;
+  try {
+    profile = await userInfoResponse.json();
+  } catch {
+    return c.text("OAuth userinfo endpoint returned invalid JSON.", 502);
+  }
   if (!profile.sub || !profile.name) return c.text("OAuth profile must include sub and name.", 400);
+  if (!/^\d{5,12}$/.test(profile.name)) return c.text("OAuth profile name must be a valid QQ number (5-12 digits).", 400);
 
   const store = readStore();
   const existingUser = store.users.find((user) => user.oauth_sub === profile.sub);

@@ -23,19 +23,18 @@ pnpm dev
 OAuth 回调地址配置为：
 
 ```text
-http://localhost:6666/auth/callback
+https://258.board.mrcwoods.com/auth/callback
 ```
 
-如果 OAuth 平台只允许填写 `localhost:6666`，请确认平台实际回调路径规则，并把 `.env` 里的 `OAUTH_REDIRECT_URI` 调整成平台认可的完整地址。
+> ⚠️ 此地址已硬编码为线上地址。本地开发时需在 `.env` 中覆盖 `OAUTH_REDIRECT_URI=http://localhost:6666/auth/callback`。
 
 ## 环境变量
 
-`.env.example` 里已经包含测试用的 `Client ID`。`OAUTH_CLIENT_SECRET`、`SESSION_SECRET` 和 OAuth 端点需要在本地 `.env` 手动填写，不要提交真实密钥。
+`.env.example` 已预填线上配置（`Client ID` 为测试值）。`OAUTH_CLIENT_SECRET`、`SESSION_SECRET` 和 OAuth 端点在本地 `.env` 手动填写，不要提交真实密钥。
 
-上线后需要改：
-
-- `PUBLIC_BASE_URL`：留言板服务器域名。
-- `OAUTH_REDIRECT_URI`：留言板域名下的 `/auth/callback`。
-- `COOKIE_SECURE=true`：HTTPS 部署时启用安全 Cookie。
+> ⚠️ `.env.example` 默认指向线上域名，**本地开发**必须覆盖：
+> - `PUBLIC_BASE_URL=http://localhost:6666`
+> - `OAUTH_REDIRECT_URI=http://localhost:6666/auth/callback`
+> - `COOKIE_SECURE=false`
 
 数据默认存储在 `message-board/data/message-board.json`。生产环境留言较多时，可以把 `server.js` 里的存储层替换成 SQLite、PostgreSQL 或 MySQL，接口不用改。
