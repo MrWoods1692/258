@@ -44,6 +44,21 @@
         </div>
       </section>
 
+      <section class="profile-panel hidden" id="profilePanel">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">My Dashboard</p>
+            <h2>我的仪表盘</h2>
+          </div>
+        </div>
+        <div class="profile-card" id="profileSummary"></div>
+        <div class="profile-tabs" role="tablist" aria-label="我的内容">
+          <button class="profile-tab active" data-profile-tab="messages" type="button">我的留言</button>
+          <button class="profile-tab" data-profile-tab="comments" type="button">我的评论</button>
+        </div>
+        <div class="profile-list" id="profileList"></div>
+      </section>
+
       <section class="composer hidden" id="composer">
         <div class="composer-head">
           <div>
@@ -72,6 +87,8 @@
           </div>
           <button class="ghost-button" id="refreshAdminButton">刷新</button>
         </div>
+        <div class="admin-dashboard" id="adminDashboard"></div>
+        <div class="admin-leaders" id="adminLeaders"></div>
         <div class="admin-list" id="adminList"></div>
       </section>
 

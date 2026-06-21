@@ -114,8 +114,12 @@ const validateContent = (content, maxLength) => {
 const likeCount = (store, targetType, targetId) => store.likes.filter((like) => like.target_type === targetType && like.target_id === targetId).length;
 const likedBy = (store, userId, targetType, targetId) => store.likes.some((like) => like.user_id === userId && like.target_type === targetType && like.target_id === targetId);
 const isAdmin = (user) => Boolean(user && adminQqs.has(String(user.qq)));
+const avatarUrl = (qq) => `https://q1.qlogo.cn/g?b=qq&nk=${encodeURIComponent(String(qq || "0"))}&s=100`;
 const canSeeItem = (item, user) => item.status === "approved" || item.user_id === user.id || isAdmin(user);
 const pendingNotice = (status) => status === "pending" ? "待审核" : "";
+const statusLabel = (status) => ({ pending: "待审核", approved: "已通过", rejected: "未通过" }[status] || "已通过");
+const countByStatus = (items, status) => items.filter((item) => (item.status || "approved") === status).length;
+const isToday = (value) => value && value.slice(0, 10) === now().slice(0, 10);
 const auditItem = (store, type, item) => {
   const author = store.users.find((user) => user.id === item.user_id);
   return {
@@ -132,6 +136,20 @@ const displayAuthor = (message, author, currentUserId) => {
   if (!message.is_anonymous || message.user_id === currentUserId) return author?.display_name || "同学";
   return "匿名同学";
 };
+const displayAvatar = (message, author, currentUserId) => {
+  if (!message.is_anonymous) return avatarUrl(author?.qq);
+  return null;
+};
+const removeMessage = (store, messageId) => {
+  const commentIds = store.comments.filter((comment) => comment.message_id === messageId).map((comment) => comment.id);
+  store.messages = store.messages.filter((message) => message.id !== messageId);
+  store.comments = store.comments.filter((comment) => comment.message_id !== messageId);
+  store.likes = store.likes.filter((like) => !(like.target_type === "message" && like.target_id === messageId) && !(like.target_type === "comment" && commentIds.includes(like.target_id)));
+};
+const removeComment = (store, commentId) => {
+  store.comments = store.comments.filter((comment) => comment.id !== commentId);
+  store.likes = store.likes.filter((like) => !(like.target_type === "comment" && like.target_id === commentId));
+};
 
 const requireAdmin = (c) => {
   const user = requireUser(c);
@@ -141,7 +159,7 @@ const requireAdmin = (c) => {
 };
 
 app.use("*", async (c, next) => {
-  c.header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
+  c.header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://q1.qlogo.cn; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
   c.header("X-Content-Type-Options", "nosniff");
   c.header("X-Frame-Options", "DENY");
   c.header("Referrer-Policy", "same-origin");
@@ -244,6 +262,65 @@ app.post("/auth/logout", (c) => {
 
 app.get("/api/me", (c) => c.json({ user: getCurrentUser(c) }));
 
+app.get("/api/me/activity", (c) => {
+  const user = requireUser(c);
+  if (user instanceof Response) return user;
+
+  const store = readStore();
+  const myMessages = store.messages
+    .filter((message) => message.user_id === user.id)
+    .map((message) => ({
+      id: message.id,
+      content: message.content,
+      isAnonymous: Boolean(message.is_anonymous),
+      status: message.status || "approved",
+      statusText: statusLabel(message.status || "approved"),
+      createdAt: message.created_at,
+      likeCount: likeCount(store, "message", message.id),
+      commentCount: store.comments.filter((comment) => comment.message_id === message.id).length,
+    }))
+    .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+
+  const myComments = store.comments
+    .filter((comment) => comment.user_id === user.id)
+    .map((comment) => {
+      const message = store.messages.find((item) => item.id === comment.message_id);
+      return {
+        id: comment.id,
+        messageId: comment.message_id,
+        content: comment.content,
+        messagePreview: message?.content || "原留言已删除",
+        status: comment.status || "approved",
+        statusText: statusLabel(comment.status || "approved"),
+        createdAt: comment.created_at,
+        likeCount: likeCount(store, "comment", comment.id),
+      };
+    })
+    .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+
+  const messageLikes = myMessages.reduce((total, message) => total + message.likeCount, 0);
+  const commentLikes = myComments.reduce((total, comment) => total + comment.likeCount, 0);
+  const recentActivity = [...myMessages, ...myComments].sort((left, right) => right.createdAt.localeCompare(left.createdAt))[0]?.createdAt || "";
+  return c.json({
+    avatarUrl: avatarUrl(user.qq),
+    stats: {
+      messageCount: myMessages.length,
+      commentCount: myComments.length,
+      receivedLikes: messageLikes + commentLikes,
+      messageLikes,
+      commentLikes,
+      givenLikes: store.likes.filter((like) => like.user_id === user.id).length,
+      pendingCount: countByStatus([...myMessages, ...myComments], "pending"),
+      approvedCount: countByStatus([...myMessages, ...myComments], "approved"),
+      rejectedCount: countByStatus([...myMessages, ...myComments], "rejected"),
+      anonymousCount: myMessages.filter((message) => message.isAnonymous).length,
+      recentActivity,
+    },
+    messages: myMessages,
+    comments: myComments,
+  });
+});
+
 app.get("/api/admin/moderation", (c) => {
   const user = requireAdmin(c);
   if (user instanceof Response) return user;
@@ -251,11 +328,39 @@ app.get("/api/admin/moderation", (c) => {
   const store = readStore();
   const messages = store.messages.map((message) => ({ ...message, status: message.status || "approved" }));
   const comments = store.comments.map((comment) => ({ ...comment, status: comment.status || "approved" }));
+  const auditItems = [
+    ...messages.map((message) => auditItem(store, "message", message)),
+    ...comments.map((comment) => auditItem(store, "comment", comment)),
+  ].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  const statusItems = [...messages, ...comments];
+  const messageLikeLeaders = messages
+    .map((message) => ({
+      id: message.id,
+      type: "message",
+      content: message.content,
+      author: store.users.find((user) => user.id === message.user_id)?.display_name || "同学",
+      likeCount: likeCount(store, "message", message.id),
+      commentCount: comments.filter((comment) => comment.message_id === message.id).length,
+    }))
+    .sort((left, right) => right.likeCount - left.likeCount)
+    .slice(0, 5);
   return c.json({
-    items: [
-      ...messages.map((message) => auditItem(store, "message", message)),
-      ...comments.map((comment) => auditItem(store, "comment", comment)),
-    ].sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
+    stats: {
+      userCount: store.users.length,
+      messageCount: messages.length,
+      commentCount: comments.length,
+      likeCount: store.likes.length,
+      pendingCount: countByStatus(statusItems, "pending"),
+      approvedCount: countByStatus(statusItems, "approved"),
+      rejectedCount: countByStatus(statusItems, "rejected"),
+      anonymousCount: messages.filter((message) => message.is_anonymous).length,
+      todayMessages: messages.filter((message) => isToday(message.created_at)).length,
+      todayComments: comments.filter((comment) => isToday(comment.created_at)).length,
+      todayLikes: store.likes.filter((like) => isToday(like.created_at)).length,
+      recentAuditCount: store.moderationLogs.filter((log) => isToday(log.created_at)).length,
+    },
+    leaders: messageLikeLeaders,
+    items: auditItems,
   });
 });
 
@@ -320,6 +425,8 @@ app.get("/api/messages", (c) => {
             id: comment.id,
             content: comment.content,
             author: commentAuthor?.display_name || "同学",
+            avatarUrl: avatarUrl(commentAuthor?.qq),
+            isMine: comment.user_id === user.id,
             createdAt: comment.created_at,
             status: comment.status,
             statusText: pendingNotice(comment.status),
@@ -332,6 +439,7 @@ app.get("/api/messages", (c) => {
         id: message.id,
         content: message.content,
         author: displayAuthor(message, author, user.id),
+        avatarUrl: displayAvatar(message, author, user.id),
         isMine: message.user_id === user.id,
         isAnonymous: Boolean(message.is_anonymous),
         createdAt: message.created_at,
@@ -344,6 +452,19 @@ app.get("/api/messages", (c) => {
       };
     }),
   });
+});
+
+app.delete("/api/messages/:id", (c) => {
+  const user = requireUser(c);
+  if (user instanceof Response) return user;
+
+  const messageId = Number(c.req.param("id"));
+  const store = readStore();
+  const message = store.messages.find((item) => item.id === messageId);
+  if (!message || message.user_id !== user.id) return c.json({ error: "留言不存在" }, 404);
+  removeMessage(store, messageId);
+  writeStore(store);
+  return c.json({ ok: true });
 });
 
 app.post("/api/messages", async (c) => {
@@ -384,6 +505,19 @@ app.post("/api/messages/:id/comments", async (c) => {
   store.comments.push({ id: nextId(store.comments), message_id: messageId, user_id: user.id, content: validation.content, status: "pending", created_at: now(), updated_at: now() });
   writeStore(store);
   return c.json({ ok: true, status: "pending" }, 201);
+});
+
+app.delete("/api/comments/:id", (c) => {
+  const user = requireUser(c);
+  if (user instanceof Response) return user;
+
+  const commentId = Number(c.req.param("id"));
+  const store = readStore();
+  const comment = store.comments.find((item) => item.id === commentId);
+  if (!comment || comment.user_id !== user.id) return c.json({ error: "评论不存在" }, 404);
+  removeComment(store, commentId);
+  writeStore(store);
+  return c.json({ ok: true });
 });
 
 app.post("/api/likes/:type/:id", (c) => {
