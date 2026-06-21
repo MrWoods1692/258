@@ -75,7 +75,7 @@ const QQGroupCard = ({ group }: { group: typeof qqGroups[0] }) => {
 const links = [
   { icon: Users, name: "班级成员", href: "/members", type: "link" },
   { icon: Image, name: "时光相册", href: "/gallery", type: "link" },
-  { icon: StickyNote, name: "留言板", href: import.meta.env.VITE_MESSAGE_BOARD_URL || "http://localhost:6666", type: "external" },
+  { icon: StickyNote, name: "留言板", href: import.meta.env.VITE_MESSAGE_BOARD_URL || "https://b.258.mrcwoods.com/", type: "external" },
   { icon: MessageCircle, name: "QQ群", type: "dialog" },
 ];
 
