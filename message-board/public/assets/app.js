@@ -94,6 +94,23 @@ const setFormMessage = (message, type = "") => {
   formMessage.dataset.type = type;
 };
 
+/* Toast notification */
+const toastContainer = document.querySelector("#toastContainer");
+const showToast = (message, type = "success", duration = 2200) => {
+  if (!toastContainer) return setFormMessage(message, type);
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+  const icons = { success: "✓", error: "✗", info: "ℹ", pending: "⏳" };
+  toast.innerHTML = `<span class="toast-icon">${icons[type] || ""}</span><span>${message}</span>`;
+  toastContainer.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add("toast-enter"));
+  setTimeout(() => {
+    toast.classList.remove("toast-enter");
+    toast.classList.add("toast-exit");
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+};
+
 const compactTime = (value) => value ? formatTime(value) : "暂无";
 
 const statusBadge = (status, text) => {
@@ -184,10 +201,9 @@ postMessageButton?.addEventListener("click", async () => {
     charCounter.className = "char-counter";
     anonymousInput.checked = false;
     await loadMessages();
-    setFormMessage("发布成功！", "success");
-    setTimeout(() => setFormMessage(""), 1800);
+    showToast("留言发布成功！", "success");
   } catch (error) {
-    setFormMessage(error.message || "发布失败，请稍后再试。", "error");
+    showToast(error.message || "发布失败，请稍后再试。", "error");
   } finally {
     postMessageButton.disabled = false;
   }
@@ -269,6 +285,7 @@ const bindBoardEvents = () => {
       input.value = "";
       state.expandedComments.add(Number(form.dataset.messageId));
       await loadMessages();
+      showToast("评论发送成功！", "success");
     });
   });
 };
@@ -360,6 +377,7 @@ const bindProfileEvents = () => {
     btn.addEventListener("click", async () => {
       if (!confirm("确定要删除这条留言吗？删除后无法恢复。")) return;
       await request(`/api/messages/${btn.dataset.deleteMessage}`, { method: "DELETE" });
+      showToast("留言已删除", "info");
       await loadActivity();
     });
   });
@@ -367,6 +385,7 @@ const bindProfileEvents = () => {
     btn.addEventListener("click", async () => {
       if (!confirm("确定要删除这条评论吗？删除后无法恢复。")) return;
       await request(`/api/comments/${btn.dataset.deleteComment}`, { method: "DELETE" });
+      showToast("评论已删除", "info");
       await loadActivity();
     });
   });
@@ -496,7 +515,8 @@ const bindReviewEvents = () => {
           method: "POST", body: JSON.stringify({ action: "approve" }),
         });
         await loadReviewData(); await loadMessages();
-      } catch (e) { alert(e.message || "操作失败"); }
+        showToast("审核通过", "success");
+      } catch (e) { showToast(e.message || "操作失败", "error"); }
       finally { btn.disabled = false; }
     });
   });
@@ -509,7 +529,8 @@ const bindReviewEvents = () => {
           method: "POST", body: JSON.stringify({ action: "reject" }),
         });
         await loadReviewData();
-      } catch (e) { alert(e.message || "操作失败"); }
+        showToast("已拒绝该内容", "info");
+      } catch (e) { showToast(e.message || "操作失败", "error"); }
       finally { btn.disabled = false; }
     });
   });

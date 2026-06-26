@@ -1407,3 +1407,276 @@ input:focus-visible {
   text-align: center;
   color: var(--muted);
 }
+
+/* ---- Toast notifications ---- */
+.toast-container {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 200px;
+  max-width: 360px;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(8px);
+  transform: translateX(120%);
+  opacity: 0;
+  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1), opacity 200ms ease;
+  pointer-events: auto;
+}
+
+.toast-enter {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.toast-exit {
+  transform: translateX(120%);
+  opacity: 0;
+}
+
+.toast-success {
+  background: rgba(59, 125, 82, 0.92);
+  color: #f0fff0;
+}
+
+.toast-error {
+  background: rgba(173, 59, 45, 0.92);
+  color: #fff0ef;
+}
+
+.toast-info {
+  background: rgba(47, 42, 36, 0.92);
+  color: #fffaf0;
+}
+
+.toast-pending {
+  background: rgba(218, 165, 32, 0.92);
+  color: #fffef0;
+}
+
+.toast-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+/* ---- Mobile improvements ---- */
+@media (max-width: 640px) {
+  .toast-container {
+    left: 16px;
+    right: 16px;
+  }
+
+  .toast {
+    max-width: 100%;
+  }
+
+  .topbar {
+    gap: 12px;
+  }
+
+  .topnav {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .topnav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .topnav-link {
+    flex-shrink: 0;
+    min-height: 40px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+
+  .brand {
+    font-size: 20px;
+  }
+
+  .brand-mark {
+    width: 36px;
+    height: 36px;
+    font-size: 13px;
+  }
+
+  .hero {
+    gap: 18px;
+  }
+
+  .hero h1 {
+    font-size: 30px;
+  }
+
+  .hero-card {
+    min-height: 140px;
+    padding: 32px 18px 18px;
+  }
+
+  .hero-card p {
+    font-size: 16px;
+  }
+
+  .note {
+    min-height: 200px;
+    padding: 30px 16px 16px;
+  }
+
+  .note-content {
+    font-size: 15px;
+  }
+
+  .post-form {
+    padding: 16px;
+  }
+
+  .post-form textarea {
+    min-height: 140px;
+    font-size: 15px;
+  }
+
+  .post-form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .post-form-actions .primary-button {
+    width: 100%;
+  }
+
+  .profile-id {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .review-item-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .review-item-head time {
+    margin-left: 0;
+  }
+
+  .review-item-actions {
+    flex-direction: column;
+  }
+
+  .review-item-actions .primary-button,
+  .review-item-actions .danger-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .comment-form {
+    flex-direction: column;
+  }
+
+  .comment-form button {
+    min-height: 40px;
+  }
+
+  .section-title {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .user-pill {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+
+  .profile-tab,
+  .review-tab {
+    min-height: 40px;
+    font-size: 13px;
+    padding: 0 12px;
+  }
+
+  .primary-button {
+    min-height: 44px;
+    padding: 0 16px;
+  }
+
+  .ghost-button,
+  .danger-button {
+    min-height: 40px;
+  }
+
+  .stats-strip strong {
+    font-size: 20px;
+  }
+
+  .dashboard-card strong {
+    font-size: 22px;
+  }
+
+  .profile-stats strong {
+    font-size: 18px;
+  }
+
+  .log-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .log-item time {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .board {
+    gap: 18px;
+  }
+
+  .note {
+    min-height: 180px;
+  }
+
+  .hero h1 {
+    font-size: 26px;
+  }
+
+  .hero-card {
+    min-height: 120px;
+  }
+
+  .hero-card p {
+    font-size: 14px;
+  }
+
+  .app-shell {
+    padding-bottom: 40px;
+  }
+
+  [data-page] {
+    padding: 14px;
+    gap: 12px;
+  }
+}

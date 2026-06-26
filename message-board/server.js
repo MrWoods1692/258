@@ -160,7 +160,34 @@ const moderateWithAI = async (content) => {
     return { approved: true, reason: "" };
   }
 
+  // Pre-filter: skip AI for very short greetings that are clearly safe
+  const quickSafe = /^[\u4e00-\u9fff\w\s，。！？、；：""''（）《》…—\-,.!?;:'"()\s]{1,6}$/;
+  if (quickSafe.test(content) && !/[赌博诈骗代考外挂色情辱骂暴力广告].*/.test(content)) {
+    return { approved: true, reason: "" };
+  }
+
+  const systemPrompt = `你是一个班级留言板的内容审核助手，专门审核中国中学生班级留言。请根据以下规则判断内容是否适合发布：
+
+## 审核规则
+1. **严禁内容（直接拒绝）**：赌博、诈骗、代考作弊、外挂、色情裸露、辱骂人身攻击、暴力威胁、违法信息
+2. **敏感内容（视情况）**：广告推广/垃圾信息、恶意刷屏、泄露他人隐私（电话号码、身份证号等）
+3. **正常内容（通过）**：日常问候、学习讨论、班级通知、活动分享、心情表达、合理的意见建议
+
+## 班级留言场景说明
+这是一个班级留言板，同班同学互相留言交流。常见的正常内容如：
+- "明天考试加油！"、"今天作业是什么"、"生日快乐"、"有人一起打球吗"
+- 正常的学习、生活、班级话题都属于正常内容
+
+## 返回格式
+请严格返回以下JSON格式，不要包含任何其他内容：
+{"approved": true, "reason": ""}
+或
+{"approved": false, "reason": "具体违规原因，用中文说明"}`;
+
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+
     const response = await fetch(aiApiEndpoint, {
       method: "POST",
       headers: {
@@ -170,37 +197,53 @@ const moderateWithAI = async (content) => {
       body: JSON.stringify({
         model: aiModel,
         messages: [
-          {
-            role: "system",
-            content: "你是一个内容审核助手。请分析用户提交的留言内容，判断是否包含不适当内容。不适当内容包括但不限于：赌博、诈骗、代考作弊、外挂、色情、辱骂、暴力、广告推广、人身攻击等。\n\n请返回严格的JSON格式：{\"approved\": true/false, \"reason\": \"审核理由\"}\n\n如果内容健康正常，返回：{\"approved\": true, \"reason\": \"\"}\n如果内容不适当，返回：{\"approved\": false, \"reason\": \"具体原因\"}"
-          },
-          {
-            role: "user",
-            content: `请审核以下内容：\n\n${content}`
-          }
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `请审核以下班级留言：\n\n${content}` }
         ],
-        temperature: 0.3,
-        max_tokens: 200,
+        temperature: 0.1,
+        max_tokens: 150,
         response_format: { type: "json_object" }
       }),
-      signal: AbortSignal.timeout(5000), // 5秒超时
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
 
     if (!response.ok) {
-      console.error(`[AI Moderation] API error: ${response.status} ${response.statusText}`);
+      console.error(`[AI Moderation] API ${response.status}: ${response.statusText}`);
+      // On API error, fall back to keyword check only
       return { approved: true, reason: "" };
     }
 
     const data = await response.json();
-    const content_text = data.choices?.[0]?.message?.content || "{}";
-    const result = JSON.parse(content_text);
+    const reply = (data.choices?.[0]?.message?.content || "").trim();
     
+    // Robust JSON extraction
+    let result = null;
+    try {
+      result = JSON.parse(reply);
+    } catch {
+      // Try to extract JSON from the response
+      const jsonMatch = reply.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try { result = JSON.parse(jsonMatch[0]); } catch { /* ignore */ }
+      }
+    }
+
+    if (!result || typeof result.approved !== "boolean") {
+      console.warn("[AI Moderation] Invalid response format:", reply.slice(0, 100));
+      return { approved: true, reason: "" };
+    }
+
     return {
-      approved: result.approved !== false,
-      reason: result.reason || ""
+      approved: result.approved,
+      reason: result.reason || (result.approved ? "" : "内容包含不适当信息")
     };
   } catch (error) {
-    console.error("[AI Moderation] Error:", error.message);
+    if (error.name === "AbortError") {
+      console.warn("[AI Moderation] Request timeout");
+    } else {
+      console.error("[AI Moderation] Error:", error.message);
+    }
     return { approved: true, reason: "" };
   }
 };
