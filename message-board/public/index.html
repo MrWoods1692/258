@@ -13,92 +13,102 @@
           <span class="brand-mark">258</span>
           <span>班级留言板</span>
         </a>
+        <nav class="topnav" id="topnav">
+          <a class="topnav-link active" href="#home">留言墙</a>
+          <a class="topnav-link" href="#profile">我的</a>
+          <a class="topnav-link" href="#stats">统计</a>
+        </nav>
         <div class="userbar" id="userbar"></div>
       </header>
 
-      <section class="hero">
-        <div>
-          <p class="eyebrow">Spark Class Notes</p>
-          <h1>把今天的小事，贴在同一面墙上。</h1>
-          <p class="hero-copy">和同学一起写一面墙的便签。留言可匿名，评论默认收起。</p>
-        </div>
-        <div class="hero-card" aria-hidden="true">
-          <span class="tape tape-left"></span>
-          <span class="tape tape-right"></span>
-          <p>晚自习前的风、课间的笑、想补上的一句祝福，都可以留在这里。</p>
-        </div>
-      </section>
+      <!-- Page: Home -->
+      <div data-page="home">
+        <section class="hero">
+          <div>
+            <p class="eyebrow">Spark Class Notes</p>
+            <h1>把今天的小事，贴在同一面墙上。</h1>
+            <p class="hero-copy">和同学一起写一面墙的便签。留言可匿名，评论默认收起。</p>
+          </div>
+          <div class="hero-card" aria-hidden="true">
+            <span class="tape tape-left"></span>
+            <span class="tape tape-right"></span>
+            <p>晚自习前的风、课间的笑、想补上的一句祝福，都可以留在这里。</p>
+          </div>
+        </section>
 
-      <section class="stats-strip hidden" id="statsStrip">
-        <div>
-          <strong id="messageCount">0</strong>
-          <span>张便签</span>
-        </div>
-        <div>
-          <strong id="commentCount">0</strong>
-          <span>条评论</span>
-        </div>
-        <div>
-          <strong id="likeCount">0</strong>
-          <span>次点赞</span>
-        </div>
-      </section>
+        <section class="stats-strip" id="statsStrip">
+          <div>
+            <strong id="messageCount">0</strong>
+            <span>张便签</span>
+          </div>
+          <div>
+            <strong id="commentCount">0</strong>
+            <span>条评论</span>
+          </div>
+          <div>
+            <strong id="likeCount">0</strong>
+            <span>次点赞</span>
+          </div>
+        </section>
 
-      <section class="profile-panel hidden" id="profilePanel">
+        <section class="composer hidden" id="composer">
+          <div class="composer-head">
+            <div>
+              <h2>写一张新便签</h2>
+              <p>最多 500 字，适合短一点、真一点。</p>
+            </div>
+            <span id="charCounter">0/500</span>
+          </div>
+          <textarea id="messageInput" maxlength="500" placeholder="写下今天想留在班级墙上的一句话"></textarea>
+          <div class="composer-actions">
+            <label class="anonymous-toggle">
+              <input type="checkbox" id="anonymousInput" />
+              <span>匿名显示</span>
+            </label>
+            <button class="primary-button" id="postMessageButton">发布留言</button>
+          </div>
+          <p class="form-message" id="formMessage" role="status"></p>
+        </section>
+
+        <section class="login-panel hidden" id="loginPanel">
+          <span class="login-badge">OAuth 登录</span>
+          <h2>登录后发布便签</h2>
+          <p>使用 OAuth 授权登录，系统只记录你的 QQ 号、显示名称和留言互动。所有内容经 AI 自动审核。</p>
+          <a class="primary-button" href="/auth/login">授权登录</a>
+        </section>
+
+        <section class="board" id="board"></section>
+      </div>
+
+      <!-- Page: Profile -->
+      <div data-page="profile" class="hidden">
         <div class="section-title">
           <div>
             <p class="eyebrow">My Dashboard</p>
             <h2>我的仪表盘</h2>
           </div>
         </div>
-        <div class="profile-card" id="profileSummary"></div>
+        <div class="profile-card" id="profileSummary">
+          <div class="profile-empty">登录后可查看个人仪表盘。</div>
+        </div>
         <div class="profile-tabs" role="tablist" aria-label="我的内容">
           <button class="profile-tab active" data-profile-tab="messages" type="button">我的留言</button>
           <button class="profile-tab" data-profile-tab="comments" type="button">我的评论</button>
         </div>
         <div class="profile-list" id="profileList"></div>
-      </section>
+      </div>
 
-      <section class="composer hidden" id="composer">
-        <div class="composer-head">
+      <!-- Page: Stats -->
+      <div data-page="stats" class="hidden">
+        <div class="section-title">
           <div>
-            <h2>写一张新便签</h2>
-            <p>最多 500 字，适合短一点、真一点。</p>
+            <p class="eyebrow">Global</p>
+            <h2>全局统计</h2>
           </div>
-          <span id="charCounter">0/500</span>
         </div>
-        <textarea id="messageInput" maxlength="500" placeholder="写下今天想留在班级墙上的一句话"></textarea>
-        <div class="composer-actions">
-          <label class="anonymous-toggle">
-            <input type="checkbox" id="anonymousInput" />
-            <span>匿名显示</span>
-          </label>
-          <button class="primary-button" id="postMessageButton">发布留言</button>
-        </div>
-        <p class="form-message" id="formMessage" role="status"></p>
-      </section>
-
-      <section class="admin-panel hidden" id="adminPanel">
-        <div class="admin-head">
-          <div>
-            <p class="eyebrow">Management</p>
-            <h2>管理后台</h2>
-            <p>查看留言板统计和热门内容。</p>
-          </div>
-          <button class="ghost-button" id="refreshAdminButton">刷新</button>
-        </div>
-        <div class="admin-dashboard" id="adminDashboard"></div>
-        <div class="admin-leaders" id="adminLeaders"></div>
-      </section>
-
-      <section class="login-panel hidden" id="loginPanel">
-        <span class="login-badge">OAuth 登录</span>
-        <h2>登录后查看留言板</h2>
-        <p>使用 OAuth 授权登录，系统只记录你的 QQ 号、显示名称和留言互动。所有内容经 AI 自动审核。</p>
-        <a class="primary-button" href="/auth/login">授权登录</a>
-      </section>
-
-      <section class="board hidden" id="board"></section>
+        <div class="stats-page-dashboard" id="statsDashboard"></div>
+        <div class="stats-page-leaders" id="statsLeaders"></div>
+      </div>
     </main>
     <script type="module" src="/assets/app.js"></script>
   </body>

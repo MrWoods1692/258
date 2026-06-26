@@ -411,39 +411,6 @@ app.get("/api/me/activity", (c) => {
   });
 });
 
-app.get("/api/admin/moderation", (c) => {
-  const user = requireAdmin(c);
-  if (user instanceof Response) return user;
-
-  const store = readStore();
-  const messages = store.messages.map((message) => ({ ...message, status: message.status || "approved" }));
-  const comments = store.comments.map((comment) => ({ ...comment, status: comment.status || "approved" }));
-  const messageLikeLeaders = messages
-    .map((message) => ({
-      id: message.id,
-      type: "message",
-      content: message.content,
-      author: store.users.find((user) => user.id === message.user_id)?.display_name || "同学",
-      likeCount: likeCount(store, "message", message.id),
-      commentCount: comments.filter((comment) => comment.message_id === message.id).length,
-    }))
-    .sort((left, right) => right.likeCount - left.likeCount)
-    .slice(0, 5);
-  return c.json({
-    stats: {
-      userCount: store.users.length,
-      messageCount: messages.length,
-      commentCount: comments.length,
-      likeCount: store.likes.length,
-      anonymousCount: messages.filter((message) => message.is_anonymous).length,
-      todayMessages: messages.filter((message) => isToday(message.created_at)).length,
-      todayComments: comments.filter((comment) => isToday(comment.created_at)).length,
-      todayLikes: store.likes.filter((like) => isToday(like.created_at)).length,
-    },
-    leaders: messageLikeLeaders,
-  });
-});
-
 app.delete("/api/admin/messages/:id", (c) => {
   const user = requireAdmin(c);
   if (user instanceof Response) return user;
@@ -457,47 +424,8 @@ app.delete("/api/admin/messages/:id", (c) => {
   return c.json({ ok: true });
 });
 
-app.post("/api/admin/moderation/:type/:id", async (c) => {
-  const user = requireAdmin(c);
-  if (user instanceof Response) return user;
-
-  const type = c.req.param("type");
-  const id = Number(c.req.param("id"));
-  if (!["message", "comment"].includes(type) || !Number.isInteger(id)) return c.json({ error: "无效的审核目标" }, 400);
-
-  const body = await c.req.json().catch(() => ({}));
-  const action = String(body.action || "");
-  if (!["approve", "reject", "delete"].includes(action)) return c.json({ error: "无效的审核操作" }, 400);
-
-  const store = readStore();
-  const collectionName = type === "message" ? "messages" : "comments";
-  const item = store[collectionName].find((entry) => entry.id === id);
-  if (!item) return c.json({ error: "审核目标不存在" }, 404);
-
-  if (action === "delete") {
-    if (type === "message") {
-      const commentIds = store.comments.filter((comment) => comment.message_id === id).map((comment) => comment.id);
-      store.comments = store.comments.filter((comment) => comment.message_id !== id);
-      store.likes = store.likes.filter((like) => !(like.target_type === "message" && like.target_id === id) && !(like.target_type === "comment" && commentIds.includes(like.target_id)));
-    } else {
-      store.likes = store.likes.filter((like) => !(like.target_type === "comment" && like.target_id === id));
-    }
-    store[collectionName] = store[collectionName].filter((entry) => entry.id !== id);
-  } else {
-    item.status = action === "approve" ? "approved" : "rejected";
-    item.moderated_by = user.id;
-    item.moderated_at = now();
-    item.updated_at = now();
-  }
-
-  store.moderationLogs.push({ id: nextId(store.moderationLogs), admin_user_id: user.id, target_type: type, target_id: id, action, created_at: now() });
-  writeStore(store);
-  return c.json({ ok: true });
-});
-
 app.get("/api/messages", (c) => {
-  const user = requireUser(c);
-  if (user instanceof Response) return user;
+  const user = getCurrentUser(c);
 
   const store = readStore();
   const messages = [...store.messages]
@@ -519,31 +447,63 @@ app.get("/api/messages", (c) => {
             content: comment.content,
             author: commentAuthor?.display_name || "同学",
             avatarUrl: avatarUrl(commentAuthor?.qq),
-            isMine: comment.user_id === user.id,
+            isMine: user ? comment.user_id === user.id : false,
             createdAt: comment.created_at,
             status: comment.status,
             statusText: pendingNotice(comment.status),
             likeCount: likeCount(store, "comment", comment.id),
-            likedByMe: likedBy(store, user.id, "comment", comment.id),
+            likedByMe: user ? likedBy(store, user.id, "comment", comment.id) : false,
           };
         });
 
       return {
         id: message.id,
         content: message.content,
-        author: displayAuthor(message, author, user.id),
-        avatarUrl: displayAvatar(message, author, user.id),
-        isMine: message.user_id === user.id,
+        author: user ? displayAuthor(message, author, user.id) : (author?.display_name || "同学"),
+        avatarUrl: user ? displayAvatar(message, author, user.id) : avatarUrl(author?.qq),
+        isMine: user ? message.user_id === user.id : false,
         isAnonymous: Boolean(message.is_anonymous),
         createdAt: message.created_at,
         status: message.status,
         statusText: pendingNotice(message.status),
         likeCount: likeCount(store, "message", message.id),
-        likedByMe: likedBy(store, user.id, "message", message.id),
+        likedByMe: user ? likedBy(store, user.id, "message", message.id) : false,
         commentCount: comments.length,
         comments,
       };
     }),
+  });
+});
+
+app.get("/api/stats", (c) => {
+  const store = readStore();
+  const messages = store.messages.map((message) => ({ ...message, status: message.status || "approved" }));
+  const comments = store.comments.map((comment) => ({ ...comment, status: comment.status || "approved" }));
+  const approvedMessages = messages.filter((m) => m.status === "approved");
+  const approvedComments = comments.filter((c) => c.status === "approved");
+  const messageLikeLeaders = approvedMessages
+    .map((message) => ({
+      id: message.id,
+      content: message.content,
+      author: store.users.find((user) => user.id === message.user_id)?.display_name || "同学",
+      likeCount: likeCount(store, "message", message.id),
+      commentCount: comments.filter((comment) => comment.message_id === message.id).length,
+    }))
+    .sort((left, right) => right.likeCount - left.likeCount)
+    .slice(0, 5);
+
+  return c.json({
+    stats: {
+      userCount: store.users.length,
+      messageCount: approvedMessages.length,
+      commentCount: approvedComments.length,
+      likeCount: store.likes.length,
+      anonymousCount: approvedMessages.filter((m) => m.is_anonymous).length,
+      todayMessages: approvedMessages.filter((m) => isToday(m.created_at)).length,
+      todayComments: approvedComments.filter((c) => isToday(c.created_at)).length,
+      todayLikes: store.likes.filter((l) => isToday(l.created_at)).length,
+    },
+    leaders: messageLikeLeaders,
   });
 });
 
