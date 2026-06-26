@@ -42,6 +42,9 @@ const aiModerationEnabled = process.env.AI_MODERATION_ENABLED === "true";
 const aiApiEndpoint = process.env.AI_API_ENDPOINT || "https://api.openai.com/v1/chat/completions";
 const aiApiKey = process.env.AI_API_KEY || "";
 const aiModel = process.env.AI_MODEL || "gpt-4o-mini";
+const aiMaxRetries = Math.max(0, Number(process.env.AI_MAX_RETRIES) || 2);
+const aiRetryBaseDelayMs = Math.max(100, Number(process.env.AI_RETRY_BASE_DELAY_MS) || 500);
+const aiTimeoutMs = Math.max(1000, Number(process.env.AI_TIMEOUT_MS) || 8000);
 const dataDir = join(process.cwd(), "data");
 const dataFile = join(dataDir, "message-board.json");
 
@@ -155,12 +158,87 @@ const normalizeContent = (content, maxLength) => {
 };
 const findViolation = (content) => bannedWords.find((word) => word && content.toLowerCase().includes(word.toLowerCase()));
 
+/* ---- AI Moderation with retry ---- */
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const isRetryableError = (error, status) => {
+  // Network errors, timeout, or server errors (5xx) / rate limit (429)
+  if (error) return true;
+  if (status === 429) return true;
+  if (status >= 500 && status < 600) return true;
+  // Client errors (4xx except 429) are not retryable
+  return false;
+};
+
+const callAIOnce = async (content, systemPrompt) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), aiTimeoutMs);
+
+  let response;
+  try {
+    response = await fetch(aiApiEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${aiApiKey}`,
+      },
+      body: JSON.stringify({
+        model: aiModel,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `请审核以下班级留言：\n\n${content}` }
+        ],
+        temperature: 0.1,
+        max_tokens: 150,
+        response_format: { type: "json_object" }
+      }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  if (!response.ok) {
+    const status = response.status;
+    const errorText = await response.text().catch(() => "");
+    const err = new Error(`AI API ${status}: ${errorText.slice(0, 200)}`);
+    err.status = status;
+    throw err;
+  }
+
+  const data = await response.json();
+  const reply = (data.choices?.[0]?.message?.content || "").trim();
+
+  // Robust JSON extraction
+  let result = null;
+  try {
+    result = JSON.parse(reply);
+  } catch {
+    const jsonMatch = reply.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try { result = JSON.parse(jsonMatch[0]); } catch { /* ignore */ }
+    }
+  }
+
+  if (!result || typeof result.approved !== "boolean") {
+    const err = new Error("Invalid AI response format");
+    err.retryable = false;
+    throw err;
+  }
+
+  return {
+    approved: result.approved,
+    reason: result.reason || (result.approved ? "" : "内容包含不适当信息")
+  };
+};
+
 const moderateWithAI = async (content) => {
   if (!aiModerationEnabled || !aiApiKey) {
     return { approved: true, reason: "" };
   }
 
-  // Pre-filter: skip AI for very short greetings that are clearly safe
+  // Pre-filter: skip AI for short clearly-safe content
   const quickSafe = /^[\u4e00-\u9fff\w\s，。！？、；：""''（）《》…—\-,.!?;:'"()\s]{1,6}$/;
   if (quickSafe.test(content) && !/[赌博诈骗代考外挂色情辱骂暴力广告].*/.test(content)) {
     return { approved: true, reason: "" };
@@ -184,68 +262,39 @@ const moderateWithAI = async (content) => {
 或
 {"approved": false, "reason": "具体违规原因，用中文说明"}`;
 
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000);
+  let lastError = null;
 
-    const response = await fetch(aiApiEndpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${aiApiKey}`,
-      },
-      body: JSON.stringify({
-        model: aiModel,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `请审核以下班级留言：\n\n${content}` }
-        ],
-        temperature: 0.1,
-        max_tokens: 150,
-        response_format: { type: "json_object" }
-      }),
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      console.error(`[AI Moderation] API ${response.status}: ${response.statusText}`);
-      // On API error, fall back to keyword check only
-      return { approved: true, reason: "" };
-    }
-
-    const data = await response.json();
-    const reply = (data.choices?.[0]?.message?.content || "").trim();
-    
-    // Robust JSON extraction
-    let result = null;
+  for (let attempt = 0; attempt <= aiMaxRetries; attempt++) {
     try {
-      result = JSON.parse(reply);
-    } catch {
-      // Try to extract JSON from the response
-      const jsonMatch = reply.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        try { result = JSON.parse(jsonMatch[0]); } catch { /* ignore */ }
+      const result = await callAIOnce(content, systemPrompt);
+      if (attempt > 0) {
+        console.log(`[AI Moderation] Succeeded on retry ${attempt}`);
       }
-    }
+      return result;
+    } catch (error) {
+      lastError = error;
+      const retryable = isRetryableError(error, error.status);
 
-    if (!result || typeof result.approved !== "boolean") {
-      console.warn("[AI Moderation] Invalid response format:", reply.slice(0, 100));
-      return { approved: true, reason: "" };
-    }
+      if (attempt < aiMaxRetries && retryable) {
+        // Exponential backoff with jitter: delay = base * 2^attempt + random(0, base)
+        const delay = aiRetryBaseDelayMs * Math.pow(2, attempt) + Math.random() * aiRetryBaseDelayMs;
+        const reason = error.name === "AbortError" ? "timeout" : (error.status ? `HTTP ${error.status}` : error.message);
+        console.warn(`[AI Moderation] Attempt ${attempt + 1} failed (${reason}), retrying in ${Math.round(delay)}ms...`);
+        await sleep(delay);
+        continue;
+      }
 
-    return {
-      approved: result.approved,
-      reason: result.reason || (result.approved ? "" : "内容包含不适当信息")
-    };
-  } catch (error) {
-    if (error.name === "AbortError") {
-      console.warn("[AI Moderation] Request timeout");
-    } else {
-      console.error("[AI Moderation] Error:", error.message);
+      if (!retryable) {
+        console.error(`[AI Moderation] Non-retryable error, giving up:`, error.message);
+      }
+      break;
     }
-    return { approved: true, reason: "" };
   }
+
+  // All retries exhausted — fall back to allowing the content
+  const finalReason = lastError?.name === "AbortError" ? "timeout" : (lastError?.status ? `HTTP ${lastError.status}` : lastError?.message || "unknown");
+  console.error(`[AI Moderation] All ${aiMaxRetries + 1} attempts failed (${finalReason}), falling back to allow`);
+  return { approved: true, reason: "" };
 };
 
 const validateContent = async (content, maxLength) => {
