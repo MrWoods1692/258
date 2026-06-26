@@ -74,8 +74,8 @@ const compactTime = (value) => value ? formatTime(value) : "暂无";
 
 const navigate = (page) => {
   state.currentPage = page;
-  pages.forEach((el) => el.classList.toggle("hidden", el.dataset.page !== page));
-  topnav.querySelectorAll(".topnav-link").forEach((link) => {
+  pages?.forEach((el) => el.classList.toggle("hidden", el.dataset.page !== page));
+  topnav?.querySelectorAll(".topnav-link").forEach((link) => {
     link.classList.toggle("active", link.getAttribute("href") === `#${page}`);
   });
 
@@ -248,7 +248,7 @@ const loadMessages = async () => {
 
 /* ---- Post message ---- */
 
-postMessageButton.addEventListener("click", async () => {
+postMessageButton?.addEventListener("click", async () => {
   const content = messageInput.value.trim();
   if (!content) {
     setFormMessage("先写点内容再发布。", "error");
@@ -275,7 +275,7 @@ postMessageButton.addEventListener("click", async () => {
   }
 });
 
-messageInput.addEventListener("input", () => {
+messageInput?.addEventListener("input", () => {
   charCounter.textContent = `${messageInput.value.length}/500`;
   if (formMessage.dataset.type === "error") setFormMessage("");
 });
@@ -356,8 +356,8 @@ const loadActivity = async () => {
   renderProfile();
 };
 
-document.querySelectorAll("[data-profile-tab]").forEach((button) => {
-  button.addEventListener("click", () => {
+document.querySelectorAll("[data-profile-tab]")?.forEach((button) => {
+  button?.addEventListener("click", () => {
     state.profileTab = button.dataset.profileTab;
     renderProfile();
   });
@@ -402,7 +402,7 @@ const renderGlobalStats = () => {
     </div>
   ` : "";
 
-  statsLeaders.querySelectorAll("[data-admin-delete-message]").forEach((button) => {
+  statsLeaders?.querySelectorAll("[data-admin-delete-message]").forEach((button) => {
     button.addEventListener("click", async () => {
       if (!confirm("确定要删除这条留言吗？删除后无法恢复，所有相关评论也会被删除。")) return;
       await request(`/api/admin/messages/${button.dataset.adminDeleteMessage}`, { method: "DELETE" });
