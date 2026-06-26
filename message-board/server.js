@@ -35,6 +35,10 @@ const cookieSecure = process.env.COOKIE_SECURE ? process.env.COOKIE_SECURE === "
 const sessionSecret = process.env.SESSION_SECRET;
 const adminQqs = new Set((process.env.ADMIN_QQS || "").split(",").map((qq) => qq.trim()).filter(Boolean));
 const bannedWords = (process.env.BANNED_WORDS || "赌博,诈骗,代考,外挂,色情,辱骂,暴力").split(",").map((word) => word.trim()).filter(Boolean);
+const aiModerationEnabled = process.env.AI_MODERATION_ENABLED === "true";
+const aiApiEndpoint = process.env.AI_API_ENDPOINT || "https://api.openai.com/v1/chat/completions";
+const aiApiKey = process.env.AI_API_KEY || "";
+const aiModel = process.env.AI_MODEL || "gpt-4o-mini";
 const dataDir = join(process.cwd(), "data");
 const dataFile = join(dataDir, "message-board.json");
 
@@ -103,13 +107,83 @@ const requireUser = (c) => {
 };
 
 const now = () => new Date().toISOString();
-const normalizeContent = (content, maxLength) => String(content || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, maxLength);
+const normalizeContent = (content, maxLength) => {
+  // 移除控制字符、HTML标签和危险字符，防止XSS注入
+  return String(content || "")
+    .replace(/[\u0000-\u001f\u007f]/g, " ")  // 移除控制字符
+    .replace(/<script[^>]*>.*?<\/script>/gi, "")  // 移除script标签
+    .replace(/<[^>]+>/g, "")  // 移除所有HTML标签
+    .replace(/javascript:/gi, "")  // 移除javascript:协议
+    .replace(/on\w+\s*=/gi, "")  // 移除事件处理器 (onclick=, onerror=等)
+    .replace(/\s+/g, " ")  // 合并空白字符
+    .trim()
+    .slice(0, maxLength);
+};
 const findViolation = (content) => bannedWords.find((word) => word && content.toLowerCase().includes(word.toLowerCase()));
-const validateContent = (content, maxLength) => {
+
+const moderateWithAI = async (content) => {
+  if (!aiModerationEnabled || !aiApiKey) {
+    return { approved: true, reason: "" };
+  }
+
+  try {
+    const response = await fetch(aiApiEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${aiApiKey}`,
+      },
+      body: JSON.stringify({
+        model: aiModel,
+        messages: [
+          {
+            role: "system",
+            content: "你是一个内容审核助手。请分析用户提交的留言内容，判断是否包含不适当内容。不适当内容包括但不限于：赌博、诈骗、代考作弊、外挂、色情、辱骂、暴力、广告推广、人身攻击等。\n\n请返回严格的JSON格式：{\"approved\": true/false, \"reason\": \"审核理由\"}\n\n如果内容健康正常，返回：{\"approved\": true, \"reason\": \"\"}\n如果内容不适当，返回：{\"approved\": false, \"reason\": \"具体原因\"}"
+          },
+          {
+            role: "user",
+            content: `请审核以下内容：\n\n${content}`
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 200,
+        response_format: { type: "json_object" }
+      }),
+    });
+
+    if (!response.ok) {
+      console.error(`[AI Moderation] API error: ${response.status} ${response.statusText}`);
+      return { approved: true, reason: "AI审核服务暂时不可用，内容已通过" };
+    }
+
+    const data = await response.json();
+    const content_text = data.choices?.[0]?.message?.content || "{}";
+    const result = JSON.parse(content_text);
+    
+    return {
+      approved: result.approved !== false,
+      reason: result.reason || ""
+    };
+  } catch (error) {
+    console.error("[AI Moderation] Error:", error.message);
+    return { approved: true, reason: "AI审核异常，内容已通过" };
+  }
+};
+
+const validateContent = async (content, maxLength) => {
   const normalized = normalizeContent(content, maxLength);
   if (!normalized) return { ok: false, error: "内容不能为空" };
+  
+  // 先检查关键词黑名单
   const matchedWord = findViolation(normalized);
   if (matchedWord) return { ok: false, error: "内容包含不适合发布的词语，请修改后再提交。", matchedWord };
+  
+  // 使用AI审核
+  const aiResult = await moderateWithAI(normalized);
+  if (!aiResult.approved) {
+    return { ok: false, error: aiResult.reason || "内容审核未通过，请修改后再提交。" };
+  }
+  
   return { ok: true, content: normalized };
 };
 const likeCount = (store, targetType, targetId) => store.likes.filter((like) => like.target_type === targetType && like.target_id === targetId).length;
@@ -487,7 +561,7 @@ app.post("/api/messages", async (c) => {
   if (user instanceof Response) return user;
 
   const body = await c.req.json().catch(() => ({}));
-  const validation = validateContent(body.content, 500);
+  const validation = await validateContent(body.content, 500);
   if (!validation.ok) return c.json({ error: validation.error }, 400);
 
   const store = readStore();
@@ -496,12 +570,12 @@ app.post("/api/messages", async (c) => {
     user_id: user.id,
     content: validation.content,
     is_anonymous: Boolean(body.isAnonymous),
-    status: "pending",
+    status: "approved",
     created_at: now(),
     updated_at: now(),
   });
   writeStore(store);
-  return c.json({ ok: true, status: "pending" }, 201);
+  return c.json({ ok: true, status: "approved" }, 201);
 });
 
 app.post("/api/messages/:id/comments", async (c) => {
@@ -514,12 +588,12 @@ app.post("/api/messages/:id/comments", async (c) => {
   if (!message || !canSeeItem({ ...message, status: message.status || "approved" }, user)) return c.json({ error: "留言不存在" }, 404);
 
   const body = await c.req.json().catch(() => ({}));
-  const validation = validateContent(body.content, 280);
+  const validation = await validateContent(body.content, 280);
   if (!validation.ok) return c.json({ error: validation.error }, 400);
 
-  store.comments.push({ id: nextId(store.comments), message_id: messageId, user_id: user.id, content: validation.content, status: "pending", created_at: now(), updated_at: now() });
+  store.comments.push({ id: nextId(store.comments), message_id: messageId, user_id: user.id, content: validation.content, status: "approved", created_at: now(), updated_at: now() });
   writeStore(store);
-  return c.json({ ok: true, status: "pending" }, 201);
+  return c.json({ ok: true, status: "approved" }, 201);
 });
 
 app.delete("/api/comments/:id", (c) => {
