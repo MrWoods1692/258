@@ -1,5 +1,5 @@
 const noteColorClasses = ["note-yellow", "note-orange", "note-green", "note-blue", "note-pink", "note-mint", "note-lavender"];
-const state = { user: null, messages: [], moderationItems: [], adminStats: null, adminLeaders: [], activity: null, profileTab: "messages", expandedComments: new Set() };
+const state = { user: null, messages: [], adminStats: null, adminLeaders: [], activity: null, profileTab: "messages", expandedComments: new Set() };
 
 const userbar = document.querySelector("#userbar");
 const loginPanel = document.querySelector("#loginPanel");
@@ -12,7 +12,6 @@ const profileList = document.querySelector("#profileList");
 const adminPanel = document.querySelector("#adminPanel");
 const adminDashboard = document.querySelector("#adminDashboard");
 const adminLeaders = document.querySelector("#adminLeaders");
-const adminList = document.querySelector("#adminList");
 const refreshAdminButton = document.querySelector("#refreshAdminButton");
 const messageCount = document.querySelector("#messageCount");
 const commentCount = document.querySelector("#commentCount");
@@ -75,8 +74,8 @@ const updateStats = () => {
 
 const renderAuth = () => {
   userbar.innerHTML = state.user
-    ? `<span class="user-pill"><strong>${escapeHtml(state.user.display_name)}</strong><small>QQ ${escapeHtml(state.user.qq)}</small></span><button class="ghost-button" id="logoutButton">退出</button>`
-    : `<a class="primary-button small" href="/auth/login">登录</a>`;
+    ? `<span class="user-pill"><strong>${escapeHtml(state.user.display_name)}</strong><small>QQ ${escapeHtml(state.user.qq)}</small></span><button class="ghost-button" id="logoutButton">退出登录</button>`
+    : `<a class="primary-button small" href="/auth/login">登录查看</a>`;
 
   loginPanel.classList.toggle("hidden", Boolean(state.user));
   composer.classList.toggle("hidden", !state.user);
@@ -89,7 +88,6 @@ const renderAuth = () => {
     await request("/auth/logout", { method: "POST" });
     state.user = null;
     state.messages = [];
-    state.moderationItems = [];
     state.activity = null;
     state.expandedComments.clear();
     renderAuth();
@@ -116,16 +114,15 @@ const renderProfile = () => {
       <div>
         <strong>${escapeHtml(state.user.display_name)}</strong>
         <span>QQ ${escapeHtml(state.user.qq)}</span>
-        <small>最近活跃：${compactTime(stats.recentActivity)}</small>
+        ${stats.recentActivity ? `<small>最近活跃：${compactTime(stats.recentActivity)}</small>` : ""}
       </div>
     </div>
     <div class="profile-stats">
-      <div><strong>${stats.messageCount}</strong><span>我的留言</span></div>
-      <div><strong>${stats.commentCount}</strong><span>我的评论</span></div>
-      <div><strong>${stats.receivedLikes}</strong><span>收到点赞</span></div>
-      <div><strong>${stats.givenLikes}</strong><span>点出点赞</span></div>
-      <div><strong>${stats.pendingCount}</strong><span>待审核</span></div>
-      <div><strong>${stats.anonymousCount}</strong><span>匿名留言</span></div>
+      <div><strong>${stats.messageCount}</strong><span>留言</span></div>
+      <div><strong>${stats.commentCount}</strong><span>评论</span></div>
+      <div><strong>${stats.receivedLikes}</strong><span>收到赞</span></div>
+      <div><strong>${stats.givenLikes}</strong><span>点出赞</span></div>
+      <div><strong>${stats.anonymousCount}</strong><span>匿名</span></div>
     </div>
   `;
 
@@ -142,13 +139,12 @@ const renderProfile = () => {
   profileList.innerHTML = items.map((item) => `
     <article class="profile-item">
       <div class="profile-item-head">
-        <span class="status-badge">${escapeHtml(item.statusText)}</span>
         <time>${formatTime(item.createdAt)}</time>
       </div>
       <p>${escapeHtml(item.content)}</p>
       ${state.profileTab === "comments" ? `<small>回复：${escapeHtml(item.messagePreview)}</small>` : ""}
       <div class="profile-item-foot">
-        <span>${item.likeCount} 次点赞${item.commentCount !== undefined ? ` · ${item.commentCount} 条评论` : ""}</span>
+        <span>${item.likeCount} 赞${item.commentCount !== undefined ? ` · ${item.commentCount} 评论` : ""}</span>
         <button class="danger-button" data-delete-${state.profileTab === "messages" ? "message" : "comment"}="${item.id}">删除</button>
       </div>
     </article>
@@ -156,6 +152,7 @@ const renderProfile = () => {
 
   profileList.querySelectorAll("[data-delete-message]").forEach((button) => {
     button.addEventListener("click", async () => {
+      if (!confirm("确定要删除这条留言吗？删除后无法恢复。")) return;
       await request(`/api/messages/${button.dataset.deleteMessage}`, { method: "DELETE" });
       await refreshUserData();
     });
@@ -163,6 +160,7 @@ const renderProfile = () => {
 
   profileList.querySelectorAll("[data-delete-comment]").forEach((button) => {
     button.addEventListener("click", async () => {
+      if (!confirm("确定要删除这条评论吗？删除后无法恢复。")) return;
       await request(`/api/comments/${button.dataset.deleteComment}`, { method: "DELETE" });
       await refreshUserData();
     });
@@ -173,23 +171,21 @@ const renderAdmin = () => {
   if (!state.user?.isAdmin) {
     adminDashboard.innerHTML = "";
     adminLeaders.innerHTML = "";
-    adminList.innerHTML = "";
     return;
   }
 
   const stats = state.adminStats;
   adminDashboard.innerHTML = stats ? `
     <div class="dashboard-grid">
-      <div class="dashboard-card primary"><strong>${stats.pendingCount}</strong><span>待审核</span></div>
       <div class="dashboard-card"><strong>${stats.userCount}</strong><span>登录用户</span></div>
       <div class="dashboard-card"><strong>${stats.messageCount}</strong><span>留言总数</span></div>
       <div class="dashboard-card"><strong>${stats.commentCount}</strong><span>评论总数</span></div>
       <div class="dashboard-card"><strong>${stats.likeCount}</strong><span>点赞总数</span></div>
-      <div class="dashboard-card"><strong>${stats.rejectedCount}</strong><span>已拒绝</span></div>
+      <div class="dashboard-card"><strong>${stats.anonymousCount}</strong><span>匿名留言</span></div>
+      <div class="dashboard-card"><strong>${stats.todayMessages}</strong><span>今日留言</span></div>
     </div>
     <div class="today-strip">
       <span>今日新增：${stats.todayMessages} 留言 · ${stats.todayComments} 评论 · ${stats.todayLikes} 点赞</span>
-      <span>匿名留言 ${stats.anonymousCount} · 今日审核 ${stats.recentAuditCount}</span>
     </div>
   ` : "";
 
@@ -199,45 +195,22 @@ const renderAdmin = () => {
       ${state.adminLeaders.map((item, index) => `
         <article class="leader-item">
           <strong>${index + 1}</strong>
-          <p>${escapeHtml(item.content)}</p>
-          <span>${escapeHtml(item.author)} · ${item.likeCount} 赞 · ${item.commentCount} 评论</span>
+          <div>
+            <p>${escapeHtml(item.content)}</p>
+            <span>${escapeHtml(item.author)} · ${item.likeCount} 赞 · ${item.commentCount} 评论</span>
+          </div>
+          <button class="danger-button small" data-admin-delete-message="${item.id}">删除</button>
         </article>
       `).join("")}
     </div>
   ` : "";
 
-  const pendingItems = state.moderationItems.filter((item) => item.status === "pending");
-  const visibleItems = pendingItems.length ? pendingItems : state.moderationItems.slice(0, 12);
-  if (!visibleItems.length) {
-    adminList.innerHTML = `<div class="admin-empty">暂无需要审核的内容。</div>`;
-    return;
-  }
-
-  adminList.innerHTML = visibleItems.map((item) => `
-    <article class="admin-item">
-      <div>
-        <span class="admin-type">${item.type === "message" ? "留言" : "评论"}</span>
-        <strong>${escapeHtml(item.author)}</strong>
-        <small>QQ ${escapeHtml(item.qq || "未知")} · ${formatTime(item.createdAt)}</small>
-      </div>
-      <p>${escapeHtml(item.content)}</p>
-      <div class="admin-actions">
-        <button class="primary-button small" data-admin-action="approve" data-admin-type="${item.type}" data-admin-id="${item.id}">通过</button>
-        <button class="ghost-button" data-admin-action="reject" data-admin-type="${item.type}" data-admin-id="${item.id}">拒绝</button>
-        <button class="danger-button" data-admin-action="delete" data-admin-type="${item.type}" data-admin-id="${item.id}">删除</button>
-      </div>
-    </article>
-  `).join("");
-
-  adminList.querySelectorAll("[data-admin-action]").forEach((button) => {
+  adminLeaders.querySelectorAll("[data-admin-delete-message]").forEach((button) => {
     button.addEventListener("click", async () => {
-      await request(`/api/admin/moderation/${button.dataset.adminType}/${button.dataset.adminId}`, {
-        method: "POST",
-        body: JSON.stringify({ action: button.dataset.adminAction }),
-      });
+      if (!confirm("确定要删除这条留言吗？删除后无法恢复，所有相关评论也会被删除。")) return;
+      await request(`/api/admin/messages/${button.dataset.adminDeleteMessage}`, { method: "DELETE" });
       await loadAdmin();
       await loadMessages();
-      await loadActivity();
     });
   });
 };
@@ -302,7 +275,6 @@ const renderMessages = () => {
 const loadAdmin = async () => {
   if (!state.user?.isAdmin) return;
   const data = await request("/api/admin/moderation");
-  state.moderationItems = data.items;
   state.adminStats = data.stats;
   state.adminLeaders = data.leaders || [];
   renderAdmin();
@@ -378,7 +350,7 @@ postMessageButton.addEventListener("click", async () => {
   }
 
   postMessageButton.disabled = true;
-  setFormMessage("正在贴上墙...", "pending");
+  setFormMessage("正在发布...", "pending");
   try {
     await request("/api/messages", {
       method: "POST",
@@ -388,7 +360,7 @@ postMessageButton.addEventListener("click", async () => {
     charCounter.textContent = "0/500";
     anonymousInput.checked = false;
     await refreshUserData();
-    setFormMessage("已提交审核，通过后会显示给其他同学。", "success");
+    setFormMessage("发布成功！", "success");
     setTimeout(() => setFormMessage(""), 1800);
   } catch (error) {
     setFormMessage(error.message || "发布失败，请稍后再试。", "error");

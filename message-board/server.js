@@ -149,11 +149,12 @@ const moderateWithAI = async (content) => {
         max_tokens: 200,
         response_format: { type: "json_object" }
       }),
+      signal: AbortSignal.timeout(5000), // 5秒超时
     });
 
     if (!response.ok) {
       console.error(`[AI Moderation] API error: ${response.status} ${response.statusText}`);
-      return { approved: true, reason: "AI审核服务暂时不可用，内容已通过" };
+      return { approved: true, reason: "" };
     }
 
     const data = await response.json();
@@ -166,7 +167,7 @@ const moderateWithAI = async (content) => {
     };
   } catch (error) {
     console.error("[AI Moderation] Error:", error.message);
-    return { approved: true, reason: "AI审核异常，内容已通过" };
+    return { approved: true, reason: "" };
   }
 };
 
@@ -417,11 +418,6 @@ app.get("/api/admin/moderation", (c) => {
   const store = readStore();
   const messages = store.messages.map((message) => ({ ...message, status: message.status || "approved" }));
   const comments = store.comments.map((comment) => ({ ...comment, status: comment.status || "approved" }));
-  const auditItems = [
-    ...messages.map((message) => auditItem(store, "message", message)),
-    ...comments.map((comment) => auditItem(store, "comment", comment)),
-  ].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
-  const statusItems = [...messages, ...comments];
   const messageLikeLeaders = messages
     .map((message) => ({
       id: message.id,
@@ -439,18 +435,26 @@ app.get("/api/admin/moderation", (c) => {
       messageCount: messages.length,
       commentCount: comments.length,
       likeCount: store.likes.length,
-      pendingCount: countByStatus(statusItems, "pending"),
-      approvedCount: countByStatus(statusItems, "approved"),
-      rejectedCount: countByStatus(statusItems, "rejected"),
       anonymousCount: messages.filter((message) => message.is_anonymous).length,
       todayMessages: messages.filter((message) => isToday(message.created_at)).length,
       todayComments: comments.filter((comment) => isToday(comment.created_at)).length,
       todayLikes: store.likes.filter((like) => isToday(like.created_at)).length,
-      recentAuditCount: store.moderationLogs.filter((log) => isToday(log.created_at)).length,
     },
     leaders: messageLikeLeaders,
-    items: auditItems,
   });
+});
+
+app.delete("/api/admin/messages/:id", (c) => {
+  const user = requireAdmin(c);
+  if (user instanceof Response) return user;
+
+  const messageId = Number(c.req.param("id"));
+  const store = readStore();
+  const message = store.messages.find((item) => item.id === messageId);
+  if (!message) return c.json({ error: "留言不存在" }, 404);
+  removeMessage(store, messageId);
+  writeStore(store);
+  return c.json({ ok: true });
 });
 
 app.post("/api/admin/moderation/:type/:id", async (c) => {
