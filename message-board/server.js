@@ -191,7 +191,7 @@ const likeCount = (store, targetType, targetId) => store.likes.filter((like) => 
 const likedBy = (store, userId, targetType, targetId) => store.likes.some((like) => like.user_id === userId && like.target_type === targetType && like.target_id === targetId);
 const isAdmin = (user) => Boolean(user && adminQqs.has(String(user.qq)));
 const avatarUrl = (qq) => `https://q1.qlogo.cn/g?b=qq&nk=${encodeURIComponent(String(qq || "0"))}&s=100`;
-const canSeeItem = (item, user) => item.status === "approved" || item.user_id === user.id || isAdmin(user);
+const canSeeItem = (item, user) => item.status === "approved" || (user && item.user_id === user.id) || isAdmin(user);
 const pendingNotice = (status) => status === "pending" ? "待审核" : "";
 const statusLabel = (status) => ({ pending: "待审核", approved: "已通过", rejected: "未通过" }[status] || "已通过");
 const countByStatus = (items, status) => items.filter((item) => (item.status || "approved") === status).length;

@@ -45,12 +45,17 @@ const request = async (url, options = {}) => {
   return data;
 };
 
-const formatTime = (value) => new Intl.DateTimeFormat("zh-CN", {
-  month: "2-digit",
-  day: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-}).format(new Date(`${value.replace(" ", "T")}+08:00`));
+const formatTime = (value) => {
+  if (!value) return "";
+  try {
+    return new Intl.DateTimeFormat("zh-CN", {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(`${value.replace(" ", "T")}+08:00`));
+  } catch { return value; }
+};
 
 const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (char) => ({
   "&": "&amp;",
