@@ -90,7 +90,7 @@ const navigate = (page) => {
   }
 };
 
-topnav.addEventListener("click", (event) => {
+topnav?.addEventListener("click", (event) => {
   const link = event.target.closest(".topnav-link");
   if (link) {
     event.preventDefault();

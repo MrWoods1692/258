@@ -1053,8 +1053,6 @@ input:focus-visible {
     font-size: 14px;
   }
 }
-  }
-}
 
 @media (max-width: 640px) {
   .app-shell {
