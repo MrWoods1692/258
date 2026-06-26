@@ -86,12 +86,12 @@ const students: Student[] = [
   { id: 258053, name: "黄一文", photo: "https://q1.qlogo.cn/g?b=qq&nk=1507428392&s=100", gender: "男", studentId: "258053", positions: [], phone: "", qqNumber: "1507428392", wechat: "未知" },
 ];
 
-// 教师数据（已按要求替换）
+// 教师数据（头像已统一替换）
 const teachers: Teacher[] = [
   {
     id: 1,
     name: "周少青",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher",
+    avatar: "https://cloudflarecnimg.scdn.io/i/6a3f0ec084924_1782517440.png",
     gender: "男",
     subject: "科学",
     phone: "未知",
@@ -101,7 +101,7 @@ const teachers: Teacher[] = [
   {
     id: 2,
     name: "龙荣明",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher",
+    avatar: "https://cloudflarecnimg.scdn.io/i/6a3f0ec084924_1782517440.png",
     gender: "男",
     subject: "体育",
     phone: "未知",
@@ -111,7 +111,7 @@ const teachers: Teacher[] = [
   {
     id: 3,
     name: "杨伟涵",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher",
+    avatar: "https://cloudflarecnimg.scdn.io/i/6a3f0ec084924_1782517440.png",
     gender: "男",
     subject: "体育",
     phone: "未知",
@@ -121,7 +121,7 @@ const teachers: Teacher[] = [
   {
     id: 4,
     name: "雷雨",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher",
+    avatar: "https://cloudflarecnimg.scdn.io/i/6a3f0ec084924_1782517440.png",
     gender: "男",
     subject: "历史",
     isClassTeacher: true,
@@ -132,7 +132,7 @@ const teachers: Teacher[] = [
   {
     id: 5,
     name: "曾凌文",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher",
+    avatar: "https://cloudflarecnimg.scdn.io/i/6a3f0ec084924_1782517440.png",
     gender: "男",
     subject: "历史",
     phone: "未知",
@@ -142,7 +142,7 @@ const teachers: Teacher[] = [
   {
     id: 6,
     name: "牛耕",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher",
+    avatar: "https://cloudflarecnimg.scdn.io/i/6a3f0ec084924_1782517440.png",
     gender: "男",
     subject: "英语",
     phone: "未知",
@@ -152,7 +152,7 @@ const teachers: Teacher[] = [
   {
     id: 7,
     name: "刘俊",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher",
+    avatar: "https://cloudflarecnimg.scdn.io/i/6a3f0ec084924_1782517440.png",
     gender: "男",
     subject: "数学",
     isClassTeacher: true,
@@ -163,7 +163,7 @@ const teachers: Teacher[] = [
   {
     id: 8,
     name: "莫琪琪",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher",
+    avatar: "https://cloudflarecnimg.scdn.io/i/6a3f0ec084924_1782517440.png",
     gender: "女",
     subject: "体育",
     phone: "未知",
@@ -173,7 +173,7 @@ const teachers: Teacher[] = [
   {
     id: 9,
     name: "郭玥",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher",
+    avatar: "https://cloudflarecnimg.scdn.io/i/6a3f0ec084924_1782517440.png",
     gender: "女",
     subject: "音乐",
     phone: "未知",
@@ -183,7 +183,7 @@ const teachers: Teacher[] = [
   {
     id: 10,
     name: "谷彦君",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher",
+    avatar: "https://cloudflarecnimg.scdn.io/i/6a3f0ec084924_1782517440.png",
     gender: "女",
     subject: "化学",
     phone: "未知",
@@ -193,7 +193,7 @@ const teachers: Teacher[] = [
   {
     id: 11,
     name: "王芳",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher",
+    avatar: "https://cloudflarecnimg.scdn.io/i/6a3f0ec084924_1782517440.png",
     gender: "女",
     subject: "物理",
     phone: "未知",
@@ -203,7 +203,7 @@ const teachers: Teacher[] = [
   {
     id: 12,
     name: "黄蓉",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher",
+    avatar: "https://cloudflarecnimg.scdn.io/i/6a3f0ec084924_1782517440.png",
     gender: "女",
     subject: "物理",
     phone: "未知",
@@ -213,7 +213,7 @@ const teachers: Teacher[] = [
   {
     id: 13,
     name: "罗秋霞",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher",
+    avatar: "https://cloudflarecnimg.scdn.io/i/6a3f0ec084924_1782517440.png",
     gender: "女",
     subject: "道德与法治",
     phone: "未知",
@@ -223,7 +223,7 @@ const teachers: Teacher[] = [
   {
     id: 14,
     name: "王瑞瑛",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher",
+    avatar: "https://cloudflarecnimg.scdn.io/i/6a3f0ec084924_1782517440.png",
     gender: "女",
     subject: "信息",
     phone: "未知",
@@ -233,7 +233,7 @@ const teachers: Teacher[] = [
   {
     id: 15,
     name: "张浩瑛",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher",
+    avatar: "https://cloudflarecnimg.scdn.io/i/6a3f0ec084924_1782517440.png",
     gender: "女",
     subject: "生物",
     phone: "未知",
@@ -243,7 +243,7 @@ const teachers: Teacher[] = [
   {
     id: 16,
     name: "张颖",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher",
+    avatar: "https://cloudflarecnimg.scdn.io/i/6a3f0ec084924_1782517440.png",
     gender: "女",
     subject: "生物",
     phone: "未知",
@@ -253,7 +253,7 @@ const teachers: Teacher[] = [
   {
     id: 17,
     name: "周青",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher",
+    avatar: "https://cloudflarecnimg.scdn.io/i/6a3f0ec084924_1782517440.png",
     gender: "女",
     subject: "地理",
     phone: "未知",
@@ -263,7 +263,7 @@ const teachers: Teacher[] = [
   {
     id: 18,
     name: "覃江丹",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher",
+    avatar: "https://cloudflarecnimg.scdn.io/i/6a3f0ec084924_1782517440.png",
     gender: "女",
     subject: "英语",
     phone: "未知",
@@ -273,7 +273,7 @@ const teachers: Teacher[] = [
   {
     id: 19,
     name: "蒙韦洁",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher",
+    avatar: "https://cloudflarecnimg.scdn.io/i/6a3f0ec084924_1782517440.png",
     gender: "女",
     subject: "语文",
     phone: "未知",
@@ -283,7 +283,7 @@ const teachers: Teacher[] = [
   {
     id: 20,
     name: "邱云",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher",
+    avatar: "https://cloudflarecnimg.scdn.io/i/6a3f0ec084924_1782517440.png",
     gender: "女",
     subject: "美术",
     phone: "未知",
