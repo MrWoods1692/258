@@ -33,6 +33,9 @@ const port = Number(process.env.PORT || 6666);
 const publicBaseUrl = process.env.PUBLIC_BASE_URL || `http://localhost:${port}`;
 const cookieSecure = process.env.COOKIE_SECURE ? process.env.COOKIE_SECURE === "true" : publicBaseUrl.startsWith("https://");
 const sessionSecret = process.env.SESSION_SECRET;
+const devMode = process.env.DEV_MODE === "true";
+const devUserQQ = process.env.DEV_USER_QQ || "10001";
+const devUserName = process.env.DEV_USER_NAME || "测试同学";
 const adminQqs = new Set((process.env.ADMIN_QQS || "").split(",").map((qq) => qq.trim()).filter(Boolean));
 const bannedWords = (process.env.BANNED_WORDS || "赌博,诈骗,代考,外挂,色情,辱骂,暴力").split(",").map((word) => word.trim()).filter(Boolean);
 const aiModerationEnabled = process.env.AI_MODERATION_ENABLED === "true";
@@ -84,6 +87,37 @@ const setSignedCookie = (c, name, value, maxAge = 60 * 60 * 24 * 7) => {
 const getSignedCookie = (c, name) => verifySignedValue(getCookie(c, name));
 
 const getCurrentUser = (c) => {
+  // DEV_MODE: return mock admin user without OAuth
+  if (devMode) {
+    const store = readStore();
+    let devUser = store.users.find((u) => u.qq === devUserQQ);
+    if (!devUser) {
+      devUser = {
+        id: nextId(store.users),
+        oauth_sub: "dev-sub",
+        qq: devUserQQ,
+        display_name: devUserName,
+        tenant_id: null,
+        tenant_name: null,
+        tenant_slug: null,
+        created_at: now(),
+        updated_at: now(),
+      };
+      store.users.push(devUser);
+      writeStore(store);
+    }
+    return {
+      id: devUser.id,
+      oauth_sub: devUser.oauth_sub,
+      qq: devUser.qq,
+      display_name: devUser.display_name,
+      tenant_id: devUser.tenant_id,
+      tenant_name: devUser.tenant_name,
+      tenant_slug: devUser.tenant_slug,
+      isAdmin: isAdmin({ qq: devUserQQ }),
+    };
+  }
+
   const userId = Number(getSignedCookie(c, "mb_session"));
   if (!userId) return null;
   const user = readStore().users.find((item) => item.id === userId);
@@ -235,7 +269,7 @@ const requireAdmin = (c) => {
 };
 
 app.use("*", async (c, next) => {
-  c.header("Content-Security-Policy", "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; img-src 'self' data: https://q1.qlogo.cn; connect-src 'self' https://static.cloudflareinsights.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
+  c.header("Content-Security-Policy", "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://q1.qlogo.cn; connect-src 'self' https://static.cloudflareinsights.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
   c.header("X-Content-Type-Options", "nosniff");
   c.header("X-Frame-Options", "DENY");
   c.header("Referrer-Policy", "same-origin");
@@ -599,6 +633,98 @@ app.post("/api/likes/:type/:id", (c) => {
   writeStore(store);
   return c.json({ liked: true });
 });
+
+/* ---- Admin review ---- */
+
+app.get("/api/admin/review", (c) => {
+  const user = requireAdmin(c);
+  if (user instanceof Response) return user;
+
+  const statusFilter = c.req.query("status") || "pending";
+  const store = readStore();
+
+  const pendingMessages = store.messages
+    .map((message) => ({ ...message, status: message.status || "approved" }))
+    .filter((message) => statusFilter === "all" || message.status === statusFilter)
+    .map((message) => auditItem(store, "message", message))
+    .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+
+  const pendingComments = store.comments
+    .map((comment) => ({ ...comment, status: comment.status || "approved" }))
+    .filter((comment) => statusFilter === "all" || comment.status === statusFilter)
+    .map((comment) => {
+      const msg = store.messages.find((m) => m.id === comment.message_id);
+      return {
+        ...auditItem(store, "comment", comment),
+        messageId: comment.message_id,
+        messagePreview: msg?.content || "(原留言已删除)",
+      };
+    })
+    .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+
+  return c.json({
+    messages: pendingMessages,
+    comments: pendingComments,
+    counts: {
+      pending: countByStatus(store.messages, "pending") + countByStatus(store.comments, "pending"),
+      approved: countByStatus(store.messages, "approved") + countByStatus(store.comments, "approved"),
+      rejected: countByStatus(store.messages, "rejected") + countByStatus(store.comments, "rejected"),
+      total: store.messages.length + store.comments.length,
+    },
+  });
+});
+
+app.post("/api/admin/review/:type/:id", async (c) => {
+  const user = requireAdmin(c);
+  if (user instanceof Response) return user;
+
+  const type = c.req.param("type");
+  const itemId = Number(c.req.param("id"));
+  const body = await c.req.json().catch(() => ({}));
+  const action = body.action;
+
+  if (!["message", "comment"].includes(type)) return c.json({ error: "无效的类型" }, 400);
+  if (!["approve", "reject"].includes(action)) return c.json({ error: "无效的操作，请使用 approve 或 reject" }, 400);
+
+  const store = readStore();
+  const items = type === "message" ? store.messages : store.comments;
+  const item = items.find((i) => i.id === itemId);
+  if (!item) return c.json({ error: "内容不存在" }, 404);
+
+  item.status = action === "approve" ? "approved" : "rejected";
+  item.updated_at = now();
+  item.reviewed_by = user.id;
+  item.reviewed_at = now();
+
+  store.moderationLogs = store.moderationLogs || [];
+  store.moderationLogs.push({
+    id: nextId(store.moderationLogs),
+    target_type: type,
+    target_id: itemId,
+    action,
+    admin_id: user.id,
+    admin_name: user.display_name,
+    content_preview: (item.content || "").slice(0, 100),
+    created_at: now(),
+  });
+
+  writeStore(store);
+  return c.json({ ok: true, status: item.status });
+});
+
+app.get("/api/admin/moderation-logs", (c) => {
+  const user = requireAdmin(c);
+  if (user instanceof Response) return user;
+
+  const store = readStore();
+  const logs = (store.moderationLogs || [])
+    .sort((left, right) => right.created_at.localeCompare(left.created_at))
+    .slice(0, 100);
+
+  return c.json({ logs });
+});
+
+/* ---- Serve ---- */
 
 serve({ fetch: app.fetch, port }, () => {
   console.log(`Message board is running at ${publicBaseUrl}`);

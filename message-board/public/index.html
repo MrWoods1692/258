@@ -98,6 +98,7 @@
         <div class="profile-tabs" role="tablist" aria-label="我的内容">
           <button class="profile-tab active" data-profile-tab="messages" type="button">我的留言</button>
           <button class="profile-tab" data-profile-tab="comments" type="button">我的评论</button>
+          <button class="profile-tab" data-profile-tab="pending" type="button">待审核 <span class="tab-badge hidden" id="profilePendingBadge">0</span></button>
         </div>
         <div class="profile-list" id="profileList"></div>
       </div>
@@ -111,6 +112,24 @@
           </div>
         </div>
         <div class="stats-page-dashboard" id="statsDashboard"></div>
+
+        <!-- Admin Review Panel -->
+        <div class="admin-review hidden" id="adminReview">
+          <div class="section-title">
+            <div>
+              <p class="eyebrow">Admin</p>
+              <h2>内容审核</h2>
+            </div>
+          </div>
+          <div class="review-tabs" role="tablist" aria-label="审核筛选">
+            <button class="review-tab active" data-review-tab="pending" type="button">待审核 <span class="review-count" id="reviewPendingCount">0</span></button>
+            <button class="review-tab" data-review-tab="approved" type="button">已通过 <span class="review-count" id="reviewApprovedCount">0</span></button>
+            <button class="review-tab" data-review-tab="rejected" type="button">未通过 <span class="review-count" id="reviewRejectedCount">0</span></button>
+          </div>
+          <div class="review-list" id="reviewList"></div>
+          <div class="review-logs" id="reviewLogs"></div>
+        </div>
+
         <div class="stats-page-leaders" id="statsLeaders"></div>
       </div>
     </main>
