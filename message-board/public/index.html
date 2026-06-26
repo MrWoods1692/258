@@ -15,6 +15,7 @@
         </a>
         <nav class="topnav" id="topnav">
           <a class="topnav-link active" href="#home">留言墙</a>
+          <a class="topnav-link" href="#post">发布</a>
           <a class="topnav-link" href="#profile">我的</a>
           <a class="topnav-link" href="#stats">统计</a>
         </nav>
@@ -51,16 +52,28 @@
           </div>
         </section>
 
-        <section class="composer hidden" id="composer">
-          <div class="composer-head">
-            <div>
-              <h2>写一张新便签</h2>
-              <p>最多 500 字，适合短一点、真一点。</p>
-            </div>
-            <span id="charCounter">0/500</span>
+        <section class="board" id="board"></section>
+      </div>
+
+      <!-- Page: Post -->
+      <div data-page="post" class="hidden">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">New Note</p>
+            <h2>写一张新便签</h2>
+            <p>最多 500 字，适合短一点、真一点。</p>
           </div>
-          <textarea id="messageInput" maxlength="500" placeholder="写下今天想留在班级墙上的一句话"></textarea>
-          <div class="composer-actions">
+          <span id="charCounter">0/500</span>
+        </div>
+
+        <div class="post-login-prompt hidden" id="postLoginPrompt">
+          <p>登录后才能发布便签。</p>
+          <a class="primary-button" href="/auth/login">授权登录</a>
+        </div>
+
+        <form class="post-form hidden" id="postForm">
+          <textarea id="messageInput" maxlength="500" placeholder="写下今天想留在班级墙上的一句话" required></textarea>
+          <div class="post-form-actions">
             <label class="anonymous-toggle">
               <input type="checkbox" id="anonymousInput" />
               <span>匿名显示</span>
@@ -68,16 +81,7 @@
             <button class="primary-button" id="postMessageButton">发布留言</button>
           </div>
           <p class="form-message" id="formMessage" role="status"></p>
-        </section>
-
-        <section class="login-panel hidden" id="loginPanel">
-          <span class="login-badge">OAuth 登录</span>
-          <h2>登录后发布便签</h2>
-          <p>使用 OAuth 授权登录，系统只记录你的 QQ 号、显示名称和留言互动。所有内容经 AI 自动审核。</p>
-          <a class="primary-button" href="/auth/login">授权登录</a>
-        </section>
-
-        <section class="board" id="board"></section>
+        </form>
       </div>
 
       <!-- Page: Profile -->

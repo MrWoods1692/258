@@ -13,8 +13,6 @@ const state = {
 const pages = document.querySelectorAll("[data-page]");
 const userbar = document.querySelector("#userbar");
 const topnav = document.querySelector("#topnav");
-const loginPanel = document.querySelector("#loginPanel");
-const composer = document.querySelector("#composer");
 const board = document.querySelector("#board");
 const statsStrip = document.querySelector("#statsStrip");
 const profileSummary = document.querySelector("#profileSummary");
@@ -29,6 +27,8 @@ const anonymousInput = document.querySelector("#anonymousInput");
 const postMessageButton = document.querySelector("#postMessageButton");
 const charCounter = document.querySelector("#charCounter");
 const formMessage = document.querySelector("#formMessage");
+const postForm = document.querySelector("#postForm");
+const postLoginPrompt = document.querySelector("#postLoginPrompt");
 
 const request = async (url, options = {}) => {
   const response = await fetch(url, {
@@ -85,8 +85,9 @@ const navigate = (page) => {
   });
 
   if (page === "home") {
-    renderHome();
     loadMessages();
+  } else if (page === "post") {
+    renderPost();
   } else if (page === "profile") {
     renderProfile();
     if (state.user) loadActivity();
@@ -112,7 +113,7 @@ window.addEventListener("hashchange", () => {
 
 const renderAuth = () => {
   userbar.innerHTML = state.user
-    ? `<span class="user-pill"><strong>${escapeHtml(state.user.display_name)}</strong><small>QQ ${escapeHtml(state.user.qq)}</small></span><button class="ghost-button" id="logoutButton">退出登录</button>`
+    ? `<span class="user-pill"><strong>${escapeHtml(state.user.display_name)}</strong><small>QQ ${escapeHtml(state.user.qq)}</small></span><button class="ghost-button" id="logoutButton">退出</button>`
     : `<a class="primary-button small" href="/auth/login">登录</a>`;
 
   document.querySelector("#logoutButton")?.addEventListener("click", async () => {
@@ -122,7 +123,7 @@ const renderAuth = () => {
     state.activity = null;
     state.expandedComments.clear();
     renderAuth();
-    if (state.currentPage === "home") renderHome();
+    if (state.currentPage === "post") renderPost();
     if (state.currentPage === "profile") renderProfile();
   });
 };
@@ -142,10 +143,17 @@ const updateStats = () => {
 
 /* ---- Home page ---- */
 
-const renderHome = () => {
-  loginPanel.classList.toggle("hidden", Boolean(state.user));
-  composer.classList.toggle("hidden", !state.user);
-  statsStrip.classList.remove("hidden");
+// Home page just shows the board, no special rendering needed
+
+/* ---- Post page ---- */
+
+const renderPost = () => {
+  const loggedIn = Boolean(state.user);
+  postForm?.classList.toggle("hidden", !loggedIn);
+  postLoginPrompt?.classList.toggle("hidden", loggedIn);
+  if (!loggedIn) {
+    setFormMessage("");
+  }
 };
 
 /* ---- Messages ---- */
@@ -289,7 +297,10 @@ messageInput?.addEventListener("input", () => {
 
 const renderProfile = () => {
   if (!state.user || !state.activity) {
-    profileSummary.innerHTML = `<div class="profile-empty">登录后可查看个人仪表盘。</div>`;
+    profileSummary.innerHTML = `<div class="profile-empty">
+      <strong>登录后可查看个人仪表盘</strong>
+      <a class="primary-button" href="/auth/login" style="margin-top:12px">授权登录</a>
+    </div>`;
     profileList.innerHTML = "";
     return;
   }
@@ -302,6 +313,9 @@ const renderProfile = () => {
         <strong>${escapeHtml(state.user.display_name)}</strong>
         <span>QQ ${escapeHtml(state.user.qq)}</span>
         ${stats.recentActivity ? `<small>最近活跃：${compactTime(stats.recentActivity)}</small>` : ""}
+        <div style="margin-top:8px">
+          <a class="primary-button small" href="#post">✏ 写新留言</a>
+        </div>
       </div>
     </div>
     <div class="profile-stats">
