@@ -48,13 +48,18 @@ const request = async (url, options = {}) => {
 const formatTime = (value) => {
   if (!value) return "";
   try {
+    const dateValue = typeof value === "number" || /^\d+$/.test(String(value))
+      ? new Date(Number(value))
+      : new Date(String(value).replace(" ", "T") + "+08:00");
+    if (isNaN(dateValue.getTime())) return String(value);
     return new Intl.DateTimeFormat("zh-CN", {
       month: "2-digit",
       day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
-    }).format(new Date(`${value.replace(" ", "T")}+08:00`));
-  } catch { return value; }
+      timeZone: "Asia/Shanghai",
+    }).format(dateValue);
+  } catch { return String(value); }
 };
 
 const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (char) => ({
@@ -80,7 +85,7 @@ const compactTime = (value) => value ? formatTime(value) : "暂无";
 const navigate = (page) => {
   state.currentPage = page;
   pages?.forEach((el) => el.classList.toggle("hidden", el.dataset.page !== page));
-  topnav?.querySelectorAll(".topnav-link").forEach((link) => {
+  topnav?.querySelectorAll(".topnav-link")?.forEach((link) => {
     link.classList.toggle("active", link.getAttribute("href") === `#${page}`);
   });
 
@@ -421,7 +426,7 @@ const renderGlobalStats = () => {
     </div>
   ` : "";
 
-  statsLeaders?.querySelectorAll("[data-admin-delete-message]").forEach((button) => {
+  statsLeaders?.querySelectorAll("[data-admin-delete-message]")?.forEach((button) => {
     button.addEventListener("click", async () => {
       if (!confirm("确定要删除这条留言吗？删除后无法恢复，所有相关评论也会被删除。")) return;
       await request(`/api/admin/messages/${button.dataset.adminDeleteMessage}`, { method: "DELETE" });
