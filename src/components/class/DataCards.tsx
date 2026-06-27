@@ -50,7 +50,7 @@ export const DataCards = () => {
     { label: "入学时间", value: 2023, suffix: "年" }, // 无法直接显示日期在CountUp，所以显示年份或特定值
     { label: "毕业时间", value: 2026, suffix: "年" },
     { label: "班级学生人数", value: 53, suffix: "人" },
-    { label: "班级教师人数", value: 19, suffix: "人" },
+    { label: "班级教师人数", value: 20, suffix: "人" },
     {
       label: days.isAfterEnd ? "已毕业天数" : "距毕业还有",
       value: days.isAfterEnd ? days.afterEndDays : days.untilEnd,
