@@ -20,9 +20,9 @@ interface StorageLink {
 }
 
 const stats: GalleryStats = {
-  photoCount: 9006,
-  videoCount: 51,
-  totalSizeGB: 174.24,
+  photoCount: 10289,
+  videoCount: 119,
+  totalSizeGB: 223.4,
 };
 
 const storageLinks: StorageLink[] = [
@@ -31,12 +31,6 @@ const storageLinks: StorageLink[] = [
     url: "https://alist.mrcwoods.com/",
     icon: <HardDrive className="w-5 h-5" />,
     description: "网站管理员掏钱买了台香港2C2G的机子，安装了一个Alist作为在线浏览平台，里面集合了各个平台存储的媒体文件。但是带宽10兆，多人加载会比较慢。",
-  },
-  {
-    name: "NAS 路线",
-    url: "https://share.fnnas.net/s/2b0358c7a89b433890",
-    icon: <HardDrive className="w-5 h-5" />,
-    description: "管理员的NAS，里面有全部照片，外网网速受到限制。",
   },
   {
     name: "夸克网盘路线",
@@ -55,7 +49,7 @@ const storageLinks: StorageLink[] = [
     url: "https://www.ilanzou.com/s/QIMXcbuh",
     icon: <HardDrive className="w-5 h-5" />,
     description: "里面只有部分内容，需要蓝奏云优享版账号。",
-  },
+  }
 ];
 
 const CopyLink = ({ link }: { link: StorageLink }) => {
