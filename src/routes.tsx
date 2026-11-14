@@ -1,6 +1,7 @@
 import HomePage from './pages/HomePage';
 import MembersPage from './pages/MembersPage';
 import GalleryPage from './pages/GalleryPage';
+import MessageBoardPage from './pages/MessageBoardPage';
 import AboutWebsitePage from './pages/AboutWebsitePage';
 import type { ReactNode } from 'react';
 
@@ -35,6 +36,12 @@ const routes: RouteConfig[] = [
     path: '/about-website',
     element: <AboutWebsitePage />,
     visible: true
+  },
+  {
+    name: '留言板',
+    path: '/message-board',
+    element: <MessageBoardPage />,
+    visible: false
   }
 ];
 

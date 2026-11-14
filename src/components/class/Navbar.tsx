@@ -19,11 +19,11 @@ export const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const navItems = [
+  const navItems: { name: string; href: string; external?: boolean }[] = [
     { name: "首页", href: "/" },
     { name: "时光相册", href: "/gallery" },
     { name: "班级成员", href: "/members" },
-    { name: "留言板", href: import.meta.env.VITE_MESSAGE_BOARD_URL || "https://board.mrcwoods.com/", external: true },
+    { name: "留言板", href: "/message-board" },
     { name: "关于网站", href: "/about-website" },
   ];
 

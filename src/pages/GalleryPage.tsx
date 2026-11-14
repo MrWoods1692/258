@@ -27,12 +27,6 @@ const stats: GalleryStats = {
 
 const storageLinks: StorageLink[] = [
   {
-    name: "Alist 路线",
-    url: "https://alist.mrcwoods.com/",
-    icon: <HardDrive className="w-5 h-5" />,
-    description: "网站管理员掏钱买了台香港2C2G的机子，安装了一个Alist作为在线浏览平台，里面集合了各个平台存储的媒体文件。但是带宽10兆，多人加载会比较慢。",
-  },
-  {
     name: "夸克网盘路线",
     url: "https://pan.quark.cn/s/bf3174b4fa3b",
     icon: <ExternalLink className="w-5 h-5" />,
@@ -184,7 +178,7 @@ const GalleryPage = () => {
 
           <div className="mt-8 p-4 bg-muted/20 rounded-lg border border-dashed border-border">
             <p className="text-sm text-muted-foreground font-yang-regular text-center">
-              💡 提示：建议使用 Alist 路线获得最佳浏览体验
+              💡 提示：建议使用夸克网盘路线获得最佳浏览体验
             </p>
           </div>
         </div>
